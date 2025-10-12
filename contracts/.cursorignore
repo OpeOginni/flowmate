@@ -1,0 +1,6 @@
+# flow
+/pkeys/*
+.env
+
+# Pay attention to imports directory
+!imports
