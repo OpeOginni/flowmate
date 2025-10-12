@@ -14,6 +14,7 @@ transaction {
   let quote: {DeFiActions.Quote}
   let initialFlowBalance: UFix64
   let flowVaultCap: auth(FungibleToken.Withdraw) &{FungibleToken.Vault}?
+  let USDCFlowVaultCap: &{FungibleToken.Vault}?
 
   prepare(acct: auth(Storage, BorrowValue) &Account) {
     // Initialize swap parameters
@@ -37,9 +38,11 @@ transaction {
     // Borrow withdraw capability and store initial balance
     if acct.storage.check<@{FungibleToken.Vault}>(from: /storage/flowTokenVault) {
       self.flowVaultCap = acct.storage.borrow<auth(FungibleToken.Withdraw) &{FungibleToken.Vault}>(from: /storage/flowTokenVault)
+      self.USDCFlowVaultCap = acct.storage.borrow<&{FungibleToken.Vault}>(from: USDCFlow.VaultStoragePath)
       self.initialFlowBalance = self.flowVaultCap!.balance
     } else {
       self.flowVaultCap = nil
+      self.USDCFlowVaultCap = nil
       self.initialFlowBalance = 0.0
     }
 
@@ -48,8 +51,11 @@ transaction {
       let flowVault <- self.flowVaultCap!.withdraw(amount: self.swapAmount)
       let returnedVault <- self.swapper.swap(quote: self.quote, inVault: <-flowVault)
 
-      // Save the returned vault to storage
-      acct.storage.save(<-returnedVault, to: /storage/flowTokenVault)
+      if self.USDCFlowVaultCap != nil {
+        self.USDCFlowVaultCap!.deposit(from: <-returnedVault)
+      } else {
+        acct.storage.save(<-returnedVault, to: USDCFlow.VaultStoragePath)
+      }
     }
   }
 
@@ -75,4 +81,4 @@ transaction {
   }
 }
 
-// flow transactions send -n mainnet ./cadence/transactions/SwapperAction.cdc --signer testnet
+// flow transactions send -n mainnet ./cadence/transactions/SwapperAction.cdc --signer mainnet
