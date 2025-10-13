@@ -1,0 +1,31 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@dynamic-labs/ethereum": "^4.37.1",
+    "@dynamic-labs/flow": "^4.37.1",
+    "@dynamic-labs/sdk-react-core": "^4.37.1",
+    "@dynamic-labs/wagmi-connector": "^4.37.1",
+    "@tanstack/react-query": "^5.90.2",
+    "ai": "^5.0.68",
+    "next": "15.5.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "viem": "^2.38.1",
+    "wagmi": "^2.18.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
