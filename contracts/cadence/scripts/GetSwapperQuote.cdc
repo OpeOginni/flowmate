@@ -4,32 +4,48 @@ import "SwapConfig"
 import "IncrementFiSwapConnectors"
 import "DeFiActions"
 
-access(all) fun main(): {String: {DeFiActions.Quote}} {
-    // Derive the path keys from the token types
-    let flowKey = SwapConfig.SliceTokenTypeIdentifierFromVaultType(vaultTypeIdentifier: Type<@FlowToken.Vault>().identifier)
-    let usdcFlowKey = SwapConfig.SliceTokenTypeIdentifierFromVaultType(vaultTypeIdentifier: Type<@USDCFlow.Vault>().identifier)
+access(all) fun main(amount: UFix64, fromToken: String, toToken: String, reverse: Bool): UFix64 {
+    
+    var fromKey: String = ""
+    var toKey: String = ""
+    var inVaultType: Type? = nil
+    var outVaultType: Type? = nil
 
-    // Minimal path Flow -> USDCFlow
+    if fromToken == "FlowToken" {
+        fromKey = SwapConfig.SliceTokenTypeIdentifierFromVaultType(vaultTypeIdentifier: Type<@FlowToken.Vault>().identifier)
+        inVaultType = Type<@FlowToken.Vault>()
+    } else if fromToken == "USDCFlow" {
+        fromKey = SwapConfig.SliceTokenTypeIdentifierFromVaultType(vaultTypeIdentifier: Type<@USDCFlow.Vault>().identifier)
+        inVaultType = Type<@USDCFlow.Vault>()
+    } else {
+        panic("Unsupported fromToken: ".concat(fromToken))
+    }
+
+    if toToken == "FlowToken" {
+        toKey = SwapConfig.SliceTokenTypeIdentifierFromVaultType(vaultTypeIdentifier: Type<@FlowToken.Vault>().identifier)
+        outVaultType = Type<@FlowToken.Vault>()
+    } else if toToken == "USDCFlow" {
+        toKey = SwapConfig.SliceTokenTypeIdentifierFromVaultType(vaultTypeIdentifier: Type<@USDCFlow.Vault>().identifier)
+        outVaultType = Type<@USDCFlow.Vault>()
+    } else {
+        panic("Unsupported toToken: ".concat(toToken))
+    }
+
+    if inVaultType == nil {
+        panic("Unsupported inVaultType: ".concat(inVaultType!.identifier))
+    }
+    if outVaultType == nil {
+        panic("Unsupported outVaultType: ".concat(outVaultType!.identifier))
+    }
+
     let swapper = IncrementFiSwapConnectors.Swapper(
-      path: [
-        flowKey,
-        usdcFlowKey
-      ],
-      inVault: Type<@FlowToken.Vault>(),
-      outVault: Type<@USDCFlow.Vault>(),
-      uniqueID: nil
+        path: [fromKey, toKey],
+        inVault: inVaultType!,
+        outVault: outVaultType!,
+        uniqueID: nil
     )
 
-    // Example: quote how much USDCFlow you'd get for 10.0 FLOW
-    let qOut = swapper.quoteOut(forProvided: 5.0, reverse: false)
-    // Note: Logs are only visible in the emulator console
-
-    // // Example: quote how much FLOW you'd need to get 25.0 USDCFlow
-    // let qIn = swapper.quoteIn(forDesired: 25.0, reverse: false)
-    // // Note: Logs are only visible in the emulator console
-
-    return {
-        "qOut": qOut
-        // "qIn": qIn
-    }
+    let quote = swapper.quoteOut(forProvided: amount, reverse: reverse)
+    
+    return quote.outAmount
 }

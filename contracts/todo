@@ -1,8 +1,23 @@
 [] - Obtaining LP and then Swapping, then Staking back - https://developers.flow.com/blockchain-development-tutorials/forte/flow-actions/flow-actions-transaction
 [] - More Action Combinations - https://developers.flow.com/blockchain-development-tutorials/forte/flow-actions/basic-combinations
 [] - Complete all needed flows
-    [] - Swap Action (already done)
-    [] - Transfer Action
-    [] - Recurring Swap / Scheduled Swap
-    [] - Harvest Rewards / Swap-to-Stable
+    [x] - Swap Action (SwapperAction.cdc)
+    [x] - Transfer Action (SendToken.cdc)
+    [x] - Recurring Swap / Scheduled Swap (ScheduleSwapToken.cdc, ScheduleSendToken.cdc via Universal Handler)
+    [x] - Claim + Restake Rewards (ClaimAndRestake.cdc) - Claims farm rewards → Zaps to LP → Restakes
+    [] - Flash Loan + Arbitrage Swap (FlashLoanAndSwap.cdc) - needs debugging
     [] - Swap + Deposit (if time allows)
+
+COMPLETED CORE FEATURES:
+[x] - Universal Scheduler (FlowMateActionHandler.cdc)
+[x] - Setup transaction (SetupFlowMateActions.cdc)
+[x] - Cancel scheduled actions (CancelScheduledAction.cdc)
+[x] - Query scripts (GetScheduledActions.cdc, GetActionStatus.cdc)
+[x] - Documentation (UNIVERSAL_SCHEDULER.md)
+[x] - Flash loan arbitrage workflow (FlashLoanAndSwap.cdc)
+
+NEXT STEPS:
+[] - Test all transactions on emulator/testnet
+[] - Voice AI integration
+[] - Frontend development
+[] - Optional: Swap + Deposit workflow

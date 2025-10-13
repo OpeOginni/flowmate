@@ -1,54 +1,54 @@
 import "FlowToken"
+import "USDCFlow"
 import "FungibleToken"
 
-transaction {
+transaction(recipient: Address, amount: UFix64, tokenType: String) {
 
-  let recipient: Address
-  let amount: UFix64
-  let withdrawCap: auth(FungibleToken.Withdraw) &{FungibleToken.Vault}?
-  let initialBalance: UFix64
+  var withdrawCap: auth(FungibleToken.Withdraw) &{FungibleToken.Vault}?
+  var initialBalance: UFix64
+  var receiverPath: PublicPath
 
   prepare(acct: auth(BorrowValue) &Account) {
-    // Initialize top-level variables
-    self.recipient = Address(0xc98f078c5df34641)
-    self.amount = 50.0
+    self.withdrawCap = nil
+    self.initialBalance = 0.0
+    self.receiverPath = /public/placeholder
 
-    // Borrow the withdraw capability and store initial balance
-    if acct.storage.check<@{FungibleToken.Vault}>(from: /storage/flowTokenVault) {
-      self.withdrawCap = acct.storage.borrow<auth(FungibleToken.Withdraw) &{FungibleToken.Vault}>(from: /storage/flowTokenVault)
-      self.initialBalance = self.withdrawCap!.balance
+    if tokenType == "FlowToken" {
+      self.receiverPath = /public/flowTokenReceiver
+      if acct.storage.check<@{FungibleToken.Vault}>(from: /storage/flowTokenVault) {
+        self.withdrawCap = acct.storage.borrow<auth(FungibleToken.Withdraw) &{FungibleToken.Vault}>(from: /storage/flowTokenVault)
+        self.initialBalance = self.withdrawCap!.balance
+      } else {
+        self.withdrawCap = nil
+        self.initialBalance = 0.0
+      }
+    } else if tokenType == "USDCFlow" {
+      self.receiverPath = USDCFlow.ReceiverPublicPath
+      if acct.storage.check<@{FungibleToken.Vault}>(from: USDCFlow.VaultStoragePath) {
+        self.withdrawCap = acct.storage.borrow<auth(FungibleToken.Withdraw) &{FungibleToken.Vault}>(from: USDCFlow.VaultStoragePath)
+        self.initialBalance = self.withdrawCap!.balance
+      } else {
+        self.withdrawCap = nil
+        self.initialBalance = 0.0
+      }
     } else {
-      self.withdrawCap = nil
-      self.initialBalance = 0.0
+      panic("Unsupported token type: ".concat(tokenType))
     }
   }
 
   pre {
-    // Check that the account has a FLOW vault
-    self.withdrawCap != nil: "Account does not have a FLOW vault"
-
-    // Check that the account has sufficient balance
-    self.withdrawCap!.balance >= self.amount: "Insufficient FLOW balance"
-
-    // Check that recipient has a receiver capability
-    getAccount(self.recipient).capabilities.get<&{FungibleToken.Receiver}>(/public/flowTokenReceiver) != nil: "Recipient does not have a FLOW receiver"
+    self.withdrawCap != nil: "Account does not have a ".concat(tokenType).concat(" vault")
+    self.withdrawCap!.balance >= amount: "Insufficient ".concat(tokenType).concat(" balance")
+    getAccount(recipient).capabilities.get<&{FungibleToken.Receiver}>(self.receiverPath) != nil: "Recipient does not have a ".concat(tokenType).concat(" receiver")
   }
 
   execute {
-    // Withdraw the tokens
-    let paymentVault <- self.withdrawCap!.withdraw(amount: self.amount)
-
-    // Get recipient's receiver capability
-    let recipientReceiverCap = getAccount(self.recipient).capabilities.borrow<&{FungibleToken.Receiver}>(/public/flowTokenReceiver)!
-
-    // Deposit to recipient
+    let paymentVault <- self.withdrawCap!.withdraw(amount: amount)
+    let recipientReceiverCap = getAccount(recipient).capabilities.borrow<&{FungibleToken.Receiver}>(self.receiverPath)!
     recipientReceiverCap.deposit(from: <-paymentVault)
   }
 
   post {
-    // Verify that the balance decreased by the sent amount
-    self.withdrawCap!.balance == self.initialBalance - self.amount: "Balance after transaction is incorrect"
+    self.withdrawCap!.balance == self.initialBalance - amount: "Balance after transaction is incorrect"
   }
 }
-
-// flow transactions send -n mainnet ./cadence/transactions/SendToken.cdc --signer testnet

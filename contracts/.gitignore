@@ -2,3 +2,4 @@
 /pkeys/*
 imports
 .env
+.opencode/
