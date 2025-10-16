@@ -156,123 +156,123 @@ export default function ConnectWallet() {
               <ScrollArea className="h-full">
                 <div className="px-6 py-6 space-y-4">
                   {messages.map((message, index) => (
-            <div key={index} className="w-full">
-              {message.parts.map((part, i) => {
-                if (part.type === 'text') {
-                  return (
-                    <div
-                      key={`${message.id}-text-${i}`}
-                      className={`flex gap-3 ${
-                        message.role === 'user' ? 'justify-end' : 'justify-start'
-                      }`}
-                    >
-                      {message.role === 'assistant' && (
-                        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
-                          <Bot className="w-5 h-5 text-white" />
-                        </div>
-                      )}
-                      <div
-                        className={`px-4 py-3 rounded-2xl max-w-[80%] ${
-                          message.role === 'user'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
-                        }`}
-                      >
-                        <p className="whitespace-pre-wrap">{part.text}</p>
-                      </div>
-                      {message.role === 'user' && (
-                        <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center flex-shrink-0">
-                          <User className="w-5 h-5 text-white" />
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
-                
-                // Handle tool call results
-                if (part.type.startsWith('tool-')) {
-                  const toolName = part.type.replace('tool-', '');
-                  const toolPart = part as any; // Type assertion for tool parts
-                  
-                  // Handle parameter request form
-                  if (toolName === 'requestParameters') {
-                    // Extract the parameter request from the tool result
-                    // The structure could be: toolPart.result, toolPart.args, or toolPart itself
-                    const rawData = toolPart.result || toolPart.args || toolPart;
-                    const paramRequest = rawData as ParamRequest;
-                    
-                    return (
-                      <div key={`${message.id}-tool-${i}`} className="flex justify-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
-                          <Bot className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="max-w-[80%]">
-                          <ParamRequestForm
-                            request={paramRequest}
-                            onSubmit={(values) => {
-                              // Send the collected parameters back to the AI
-                              const paramsJson = JSON.stringify(values, null, 2);
-                              sendMessage({ 
-                                text: `Here are the parameters you requested for ${paramRequest.actionLabel}:\n\`\`\`json\n${paramsJson}\n\`\`\`` 
-                              });
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  }
-                  
-                  // Handle transaction tool results
-                  const txKey = `${message.id}-${i}`;
-                  const txId = completedTransactions[txKey];
-                  
-                  return (
-                    <div key={`${message.id}-tool-${i}`} className="flex justify-center w-full my-6">
-                      <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border-2 border-green-400 dark:border-green-600 rounded-2xl p-6 max-w-md w-full shadow-lg">
-                        {txId ? (
-                          // Show transaction link if completed
-                          <div className="flex flex-col items-center gap-3">
-                            <div className="text-center">
-                              <p className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2">
-                                ✅ Transaction Sent Successfully!
-                              </p>
-                              <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                                View your transaction on the blockchain
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <TransactionLink txId={txId} variant='primary' />
-                            </div>
-                          </div>
-                        ) : (
-                          // Show sign button if not completed
-                          <>
-                            <button
-                              onClick={() => {
-                                // Extract the actual transaction data from the tool call result
-                                // The structure is: { output: { name, code, args, ... } }
-                                const rawData = toolPart.result || toolPart;
-                                const txData = rawData.output || rawData;
-                                
-                                setSelectedTransaction({ ...txData, _key: txKey });
-                              }}
-                              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-md"
+                    <div key={index} className="w-full">
+                      {message.parts.map((part, i) => {
+                        if (part.type === 'text') {
+                          return (
+                            <div
+                              key={`${message.id}-text-${i}`}
+                              className={`flex gap-3 ${
+                                message.role === 'user' ? 'justify-end' : 'justify-start'
+                              }`}
                             >
-                              🔐 Review & Sign Transaction
-                            </button>
-                            <p className="text-xs text-center text-gray-600 dark:text-gray-400 mt-3">
-                              Click to review transaction details before signing
-                            </p>
-                          </>
-                        )}
-                      </div>
+                              {message.role === 'assistant' && (
+                                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                                  <Bot className="w-5 h-5 text-white" />
+                                </div>
+                              )}
+                              <div
+                                className={`px-4 py-3 rounded-2xl max-w-[80%] ${
+                                  message.role === 'user'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
+                                }`}
+                              >
+                                <p className="whitespace-pre-wrap">{part.text}</p>
+                              </div>
+                              {message.role === 'user' && (
+                                <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center flex-shrink-0">
+                                  <User className="w-5 h-5 text-white" />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                        
+                        // Handle tool call results
+                        if (part.type.startsWith('tool-')) {
+                          const toolName = part.type.replace('tool-', '');
+                          const toolPart = part as any; // Type assertion for tool parts
+                          
+                          // Handle parameter request form
+                          if (toolName === 'requestParameters') {
+                            // Extract the parameter request from the tool result
+                            // The structure could be: toolPart.result, toolPart.args, or toolPart itself
+                            const rawData = toolPart.result || toolPart.args || toolPart;
+                            const paramRequest = rawData as ParamRequest;
+                            
+                            return (
+                              <div key={`${message.id}-tool-${i}`} className="flex justify-start gap-3">
+                                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                                  <Bot className="w-5 h-5 text-white" />
+                                </div>
+                                <div className="max-w-[80%]">
+                                  <ParamRequestForm
+                                    request={paramRequest}
+                                    onSubmit={(values) => {
+                                      // Send the collected parameters back to the AI
+                                      const paramsJson = JSON.stringify(values, null, 2);
+                                      sendMessage({ 
+                                        text: `Here are the parameters you requested for ${paramRequest.actionLabel}:\n\`\`\`json\n${paramsJson}\n\`\`\`` 
+                                      });
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          }
+                          
+                          // Handle transaction tool results
+                          const txKey = `${message.id}-${i}`;
+                          const txId = completedTransactions[txKey];
+                          
+                          return (
+                            <div key={`${message.id}-tool-${i}`} className="flex justify-center w-full my-6">
+                              <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border-2 border-green-400 dark:border-green-600 rounded-2xl p-6 max-w-md w-full shadow-lg">
+                                {txId ? (
+                                  // Show transaction link if completed
+                                  <div className="flex flex-col items-center gap-3">
+                                    <div className="text-center">
+                                      <p className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2">
+                                        ✅ Transaction Sent Successfully!
+                                      </p>
+                                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                                        View your transaction on the blockchain
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <TransactionLink txId={txId} variant='primary' />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  // Show sign button if not completed
+                                  <>
+                                    <button
+                                      onClick={() => {
+                                        // Extract the actual transaction data from the tool call result
+                                        // The structure is: { output: { name, code, args, ... } }
+                                        const rawData = toolPart.result || toolPart;
+                                        const txData = rawData.output || rawData;
+                                        
+                                        setSelectedTransaction({ ...txData, _key: txKey });
+                                      }}
+                                      className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-md"
+                                    >
+                                      🔐 Review & Sign Transaction
+                                    </button>
+                                    <p className="text-xs text-center text-gray-600 dark:text-gray-400 mt-3">
+                                      Click to review transaction details before signing
+                                    </p>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        return null;
+                      })}
                     </div>
-                  );
-                }
-                
-                return null;
-              })}
-            </div>
           ))}
           
           {isLoading && (
