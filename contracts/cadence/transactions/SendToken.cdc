@@ -1,6 +1,6 @@
-import "FlowToken"
-import "USDCFlow"
-import "FungibleToken"
+import FlowToken from "FlowToken"
+import USDCFlow from "USDCFlow"
+import FungibleToken from "FungibleToken"
 
 transaction(recipient: Address, amount: UFix64, tokenType: String) {
 

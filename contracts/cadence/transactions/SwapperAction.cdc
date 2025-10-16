@@ -5,69 +5,124 @@ import "IncrementFiSwapConnectors"
 import "FungibleToken"
 import "DeFiActions"
 
-transaction {
+transaction(amount: UFix64, fromToken: String, toToken: String) {
 
   let swapAmount: UFix64
-  let flowKey: String
-  let usdcFlowKey: String
+  let fromKey: String
+  let toKey: String
   let swapper: IncrementFiSwapConnectors.Swapper
   let quote: {DeFiActions.Quote}
-  let initialFlowBalance: UFix64
-  let flowVaultCap: auth(FungibleToken.Withdraw) &{FungibleToken.Vault}?
-  let USDCFlowVaultCap: &{FungibleToken.Vault}?
+  let initialFromBalance: UFix64
+  let fromVaultCap: auth(FungibleToken.Withdraw) &{FungibleToken.Vault}?
+  let toVaultCap: &{FungibleToken.Vault}?
+  var fromVaultType: Type?
+  var toVaultType: Type?
+  var fromStoragePath: StoragePath?
+  var toStoragePath: StoragePath?
 
   prepare(acct: auth(Storage, BorrowValue) &Account) {
     // Initialize swap parameters
-    self.swapAmount = 5.0
+    self.swapAmount = amount
+    self.fromVaultType = nil
+    self.toVaultType = nil
+    self.fromStoragePath = nil
+    self.toStoragePath = nil
+
+    // Determine vault types and storage paths based on token names
+    if fromToken == "FlowToken" {
+      self.fromVaultType = Type<@FlowToken.Vault>()
+      self.fromStoragePath = /storage/flowTokenVault
+    } else if fromToken == "USDCFlow" {
+      self.fromVaultType = Type<@USDCFlow.Vault>()
+      self.fromStoragePath = USDCFlow.VaultStoragePath
+    } else {
+      panic("Unsupported fromToken: ".concat(fromToken))
+    }
+
+    if toToken == "FlowToken" {
+      self.toVaultType = Type<@FlowToken.Vault>()
+      self.toStoragePath = /storage/flowTokenVault
+    } else if toToken == "USDCFlow" {
+      self.toVaultType = Type<@USDCFlow.Vault>()
+      self.toStoragePath = USDCFlow.VaultStoragePath
+    } else {
+      panic("Unsupported toToken: ".concat(toToken))
+    }
+
+    if self.fromVaultType == nil {
+      panic("Unsupported fromVaultType: ".concat(self.fromVaultType!.identifier))
+    }
+    if self.toVaultType == nil {
+      panic("Unsupported toVaultType: ".concat(self.toVaultType!.identifier))
+    }
+    if self.fromStoragePath == nil {
+      panic("Unsupported fromStoragePath")
+    }
+    if self.toStoragePath == nil {
+      panic("Unsupported toStoragePath")
+    }
 
     // Derive the path keys from the token types
-    self.flowKey = SwapConfig.SliceTokenTypeIdentifierFromVaultType(vaultTypeIdentifier: Type<@FlowToken.Vault>().identifier)
-    self.usdcFlowKey = SwapConfig.SliceTokenTypeIdentifierFromVaultType(vaultTypeIdentifier: Type<@USDCFlow.Vault>().identifier)
+    self.fromKey = SwapConfig.SliceTokenTypeIdentifierFromVaultType(vaultTypeIdentifier: self.fromVaultType!.identifier)
+    self.toKey = SwapConfig.SliceTokenTypeIdentifierFromVaultType(vaultTypeIdentifier: self.toVaultType!.identifier)
 
-    // Create swapper for Flow -> USDCFlow
+    // Create swapper with dynamic token types
     self.swapper = IncrementFiSwapConnectors.Swapper(
-      path: [self.flowKey, self.usdcFlowKey],
-      inVault: Type<@FlowToken.Vault>(),
-      outVault: Type<@USDCFlow.Vault>(),
+      path: [self.fromKey, self.toKey],
+      inVault: self.fromVaultType!,
+      outVault: self.toVaultType!,
       uniqueID: nil
     )
 
     // Get quote for the swap
     self.quote = self.swapper.quoteOut(forProvided: self.swapAmount, reverse: false)
 
+    if self.fromStoragePath == nil {
+      panic("Unsupported fromStoragePath")
+    }
+    if self.toStoragePath == nil {
+      panic("Unsupported toStoragePath")
+    }
+
     // Borrow withdraw capability and store initial balance
-    if acct.storage.check<@{FungibleToken.Vault}>(from: /storage/flowTokenVault) {
-      self.flowVaultCap = acct.storage.borrow<auth(FungibleToken.Withdraw) &{FungibleToken.Vault}>(from: /storage/flowTokenVault)
-      self.USDCFlowVaultCap = acct.storage.borrow<&{FungibleToken.Vault}>(from: USDCFlow.VaultStoragePath)
-      self.initialFlowBalance = self.flowVaultCap!.balance
+    if acct.storage.check<@{FungibleToken.Vault}>(from: self.fromStoragePath!) {
+      self.fromVaultCap = acct.storage.borrow<auth(FungibleToken.Withdraw) &{FungibleToken.Vault}>(from: self.fromStoragePath!)
+      self.toVaultCap = acct.storage.borrow<&{FungibleToken.Vault}>(from: self.toStoragePath!)
+      self.initialFromBalance = self.fromVaultCap!.balance
     } else {
-      self.flowVaultCap = nil
-      self.USDCFlowVaultCap = nil
-      self.initialFlowBalance = 0.0
+      self.fromVaultCap = nil
+      self.toVaultCap = nil
+      self.initialFromBalance = 0.0
+    }
+
+    // Check that the account has the source token vault
+    if self.fromVaultCap == nil {
+      panic("Account does not have the source token vault")
+    }
+
+    // Check that the account has sufficient balance
+    if self.fromVaultCap!.balance < self.swapAmount {
+      panic("Insufficient balance for swap")
     }
 
     // Perform the swap with storage operations (since storage access is required)
-    if self.flowVaultCap != nil {
-      let flowVault <- self.flowVaultCap!.withdraw(amount: self.swapAmount)
-      let returnedVault <- self.swapper.swap(quote: self.quote, inVault: <-flowVault)
+    if self.fromVaultCap != nil {
+      let fromVault <- self.fromVaultCap!.withdraw(amount: self.swapAmount)
+      let returnedVault <- self.swapper.swap(quote: self.quote, inVault: <-fromVault)
 
-      if self.USDCFlowVaultCap != nil {
-        self.USDCFlowVaultCap!.deposit(from: <-returnedVault)
+      if self.toVaultCap != nil {
+        self.toVaultCap!.deposit(from: <-returnedVault)
       } else {
-        acct.storage.save(<-returnedVault, to: USDCFlow.VaultStoragePath)
+        acct.storage.save(<-returnedVault, to: self.toStoragePath!)
       }
     }
   }
 
   pre {
-    // Check that the account has a FLOW vault
-    self.flowVaultCap != nil: "Account does not have a FLOW vault"
-
-    // Check that the account has sufficient FLOW balance
-    self.flowVaultCap!.balance >= self.swapAmount: "Insufficient FLOW balance for swap"
-
     // Check that the quote is valid
     self.quote.outAmount > 0.0: "Invalid swap quote"
+
+    self.fromVaultCap != nil: "Account does not have the source token vault"
   }
 
   execute {
@@ -76,8 +131,8 @@ transaction {
   }
 
   post {
-    // Verify that FLOW balance decreased by swap amount
-    self.flowVaultCap!.balance == self.initialFlowBalance - self.swapAmount: "FLOW balance after swap is incorrect"
+    // Verify that source token balance decreased by swap amount
+    self.fromVaultCap!.balance == self.initialFromBalance - self.swapAmount: "Source token balance after swap is incorrect"
   }
 }
 
