@@ -17,13 +17,15 @@ import {
   type ClaimAndRestakeParams,
   type SwapperActionParams,
 } from '../schemas/transactions';
+import { templateTransactionWithLogging } from '../lib/template-transaction';
+import { FlowNetwork } from '../lib/contract-addresses';
 
 // Transaction payload type
 export interface TransactionPayload {
   name: string;
   codePath: string;
   code: string;
-  args: Array<{ name: string; type: string; value: unknown }>;
+  args?: Array<{ name: string; type: string; value: unknown }>;
   description: string;
 }
 
@@ -31,6 +33,12 @@ export interface TransactionPayload {
 function readTransactionFile(filename: string): string {
   const contractsPath = path.join(process.cwd(), '..', 'contracts', 'cadence', 'transactions', filename);
   return fs.readFileSync(contractsPath, 'utf-8');
+}
+
+// Helper to template a transaction with contract addresses
+function readAndTemplateTransaction(filename: string, network: FlowNetwork = 'testnet'): string {
+  const rawCode = readTransactionFile(filename);
+  return templateTransactionWithLogging(rawCode, network, filename);
 }
 
 // Helper to map Cadence types
@@ -47,6 +55,20 @@ function getCadenceType(value: unknown): string {
   return 'String';
 }
 
+// Helper to format numbers as UFix64 strings (must have decimal point)
+function toUFix64String(value: number): string {
+  const str = value.toString();
+  // If the string doesn't contain a decimal point, add .0
+  return str.includes('.') ? str : `${str}.0`;
+}
+
+// Network context that will be set by the API route
+let currentNetwork: FlowNetwork = 'testnet';
+
+export function setFlowNetwork(network: FlowNetwork) {
+  currentNetwork = network;
+}
+
 /**
  * SendToken Tool
  */
@@ -54,7 +76,7 @@ export const sendTokenTool = tool({
   description: 'Send FLOW or USDC tokens to a recipient address. Use this when the user wants to transfer tokens immediately.',
   inputSchema: sendTokenSchema,
   execute: async (params: SendTokenParams) => {
-    const code = readTransactionFile('SendToken.cdc');
+    const code = readAndTemplateTransaction('SendToken.cdc', currentNetwork);
     
     return {
       name: 'Send Tokens',
@@ -62,7 +84,7 @@ export const sendTokenTool = tool({
       code,
       args: [
         { name: 'recipient', type: 'Address', value: params.recipient },
-        { name: 'amount', type: 'UFix64', value: params.amount.toString() },
+        { name: 'amount', type: 'UFix64', value: toUFix64String(params.amount) },
         { name: 'tokenType', type: 'String', value: params.tokenType },
       ],
       description: `Send ${params.amount} ${params.tokenType} to ${params.recipient}`,
@@ -77,7 +99,7 @@ export const scheduleSendTokenTool = tool({
   description: 'Schedule a token send for future execution. Use this when the user wants to send tokens at a specific time in the future.',
   inputSchema: scheduleSendTokenSchema,
   execute: async (params: ScheduleSendTokenParams) => {
-    const code = readTransactionFile('ScheduleSendToken.cdc');
+    const code = readAndTemplateTransaction('ScheduleSendToken.cdc', currentNetwork);
     
     const date = new Date(params.timestamp * 1000);
     
@@ -87,11 +109,11 @@ export const scheduleSendTokenTool = tool({
       code,
       args: [
         { name: 'recipient', type: 'Address', value: params.recipient },
-        { name: 'amount', type: 'UFix64', value: params.amount.toString() },
-        { name: 'timestamp', type: 'UFix64', value: params.timestamp.toString() },
+        { name: 'amount', type: 'UFix64', value: toUFix64String(params.amount) },
+        { name: 'timestamp', type: 'UFix64', value: toUFix64String(params.timestamp) },
         { name: 'priority', type: 'UInt8', value: params.priority.toString() },
         { name: 'executionEffort', type: 'UInt64', value: params.executionEffort.toString() },
-        { name: 'feeAmount', type: 'UFix64', value: params.feeAmount.toString() },
+        { name: 'feeAmount', type: 'UFix64', value: toUFix64String(params.feeAmount) },
         { name: 'tokenType', type: 'String', value: params.tokenType },
       ],
       description: `Schedule sending ${params.amount} ${params.tokenType} to ${params.recipient} on ${date.toLocaleString()}`,
@@ -106,7 +128,7 @@ export const scheduleSwapTokenTool = tool({
   description: 'Schedule a token swap for future execution. Use this when the user wants to swap tokens at a specific time.',
   inputSchema: scheduleSwapTokenSchema,
   execute: async (params: ScheduleSwapTokenParams) => {
-    const code = readTransactionFile('ScheduleSwapToken.cdc');
+    const code = readAndTemplateTransaction('ScheduleSwapToken.cdc', currentNetwork);
     
     const date = new Date(params.timestamp * 1000);
     
@@ -117,11 +139,11 @@ export const scheduleSwapTokenTool = tool({
       args: [
         { name: 'fromToken', type: 'String', value: params.fromToken },
         { name: 'toToken', type: 'String', value: params.toToken },
-        { name: 'amount', type: 'UFix64', value: params.amount.toString() },
-        { name: 'timestamp', type: 'UFix64', value: params.timestamp.toString() },
+        { name: 'amount', type: 'UFix64', value: toUFix64String(params.amount) },
+        { name: 'timestamp', type: 'UFix64', value: toUFix64String(params.timestamp) },
         { name: 'priority', type: 'UInt8', value: params.priority.toString() },
         { name: 'executionEffort', type: 'UInt64', value: params.executionEffort.toString() },
-        { name: 'feeAmount', type: 'UFix64', value: params.feeAmount.toString() },
+        { name: 'feeAmount', type: 'UFix64', value: toUFix64String(params.feeAmount) },
       ],
       description: `Schedule swapping ${params.amount} ${params.fromToken} to ${params.toToken} on ${date.toLocaleString()}`,
     };
@@ -135,7 +157,7 @@ export const setupFlowMateActionsTool = tool({
   description: 'Setup the FlowMate action handler. This must be run once before scheduling any actions. Use this when the user needs to initialize their account for scheduled transactions.',
   inputSchema: setupFlowMateActionsSchema,
   execute: async (params: SetupFlowMateActionsParams) => {
-    const code = readTransactionFile('SetupFlowMateActions.cdc');
+    const code = readAndTemplateTransaction('SetupFlowMateActions.cdc', currentNetwork);
     
     return {
       name: 'Setup FlowMate Actions',
@@ -154,7 +176,7 @@ export const cancelScheduledActionTool = tool({
   description: 'Cancel a previously scheduled transaction. Use this when the user wants to cancel a pending scheduled action.',
   inputSchema: cancelScheduledActionSchema,
   execute: async (params: CancelScheduledActionParams) => {
-    const code = readTransactionFile('CancelScheduledAction.cdc');
+    const code = readAndTemplateTransaction('CancelScheduledAction.cdc', currentNetwork);
     
     return {
       name: 'Cancel Scheduled Action',
@@ -175,7 +197,7 @@ export const claimAndRestakeTool = tool({
   description: 'Claim staking rewards and automatically restake them in the same pool. Use this when the user wants to compound their staking rewards.',
   inputSchema: claimAndRestakeSchema,
   execute: async (params: ClaimAndRestakeParams) => {
-    const code = readTransactionFile('ClaimAndRestake.cdc');
+    const code = readAndTemplateTransaction('ClaimAndRestake.cdc', currentNetwork);
     
     return {
       name: 'Claim and Restake',
@@ -193,17 +215,21 @@ export const claimAndRestakeTool = tool({
  * SwapperAction Tool
  */
 export const swapperActionTool = tool({
-  description: 'Execute an immediate token swap from FLOW to USDC. Use this when the user wants to swap tokens now.',
+  description: 'Execute an immediate token swap between FlowToken and USDCFlow tokens. Use this when the user wants to swap tokens now.',
   inputSchema: swapperActionSchema,
   execute: async (params: SwapperActionParams) => {
-    const code = readTransactionFile('SwapperAction.cdc');
+    const code = readAndTemplateTransaction('SwapperAction.cdc', currentNetwork);
     
     return {
       name: 'Swap Tokens',
       codePath: 'contracts/cadence/transactions/SwapperAction.cdc',
       code,
-      args: [],
-      description: `Swap ${params.amount} FLOW to USDC (note: amount is hardcoded in the transaction)`,
+      args: [
+        { name: 'amount', type: 'UFix64', value: toUFix64String(params.amount) },
+        { name: 'fromToken', type: 'String', value: params.fromToken },
+        { name: 'toToken', type: 'String', value: params.toToken },
+      ],
+      description: `Swap ${params.amount} ${params.fromToken} to ${params.toToken}`,
     };
   },
 });

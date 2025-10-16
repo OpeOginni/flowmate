@@ -1,17 +1,18 @@
 "use client"
 
-import { useFlowCurrentUser, useFlowAccount, Connect } from "@onflow/react-sdk"
+import { useFlowCurrentUser, useFlowAccount, Connect, TransactionLink } from "@onflow/react-sdk"
 import MainPageConnectWallet from "./MainPageConnectWallet"
 import { Button } from "@onflow/react-sdk/types/components/internal/Button"
 import { Input } from "./ui/input"
 import { InputGroup, InputGroupInput, InputGroupAddon, InputGroupButton } from "./ui/input-group"
 import { useState } from "react"
-import { AudioLinesIcon, SendIcon, Mic, StopCircle, LoaderCircle, Bot, User } from "lucide-react"
+import { AudioLinesIcon, SendIcon, Mic, StopCircle, LoaderCircle, Bot, User, ExternalLink } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { useAudioRecorder } from "@/hooks/useAudioRecorder"
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
@@ -19,12 +20,15 @@ import TransactionConfirmation from './TransactionConfirmation'
 import ParamRequestForm from './ParamRequestForm'
 import type { ChatMessage } from '@/app/api/chat/route'
 import type { ParamRequest } from '@/server/schemas/param-requests'
+import { useNetworkSwitch } from '@/providers/FlowProvider'
 
 export default function ConnectWallet() {
   const { user, unauthenticate } = useFlowCurrentUser()
+  const { currentNetwork } = useNetworkSwitch()
   const [input, setInput] = useState("")
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null)
+  const [completedTransactions, setCompletedTransactions] = useState<Record<string, string>>({})
   
   const { 
     isRecording, 
@@ -41,6 +45,7 @@ export default function ConnectWallet() {
       api: '/api/chat',
       body: {
         walletAddress: user?.addr,
+        network: currentNetwork, // Pass the user's connected network
       },
     }),
   })
@@ -48,7 +53,11 @@ export default function ConnectWallet() {
   const isLoading = messages.length > 0 && messages[messages.length - 1]?.role === 'user'
 
   if (!user?.loggedIn) {
-    return (<MainPageConnectWallet />)
+    return (
+      <div className="flex-1 flex flex-col">
+        <MainPageConnectWallet />
+      </div>
+    )
   }
 
   const handleVoiceInput = async () => {
@@ -120,12 +129,33 @@ export default function ConnectWallet() {
     return "Start voice input"
   }
 
+  const hasMessages = messages.length > 0;
+
   return (
     <>
-      <div className="flex flex-col items-center w-full max-w-4xl mx-auto px-4 h-full">
-        {/* Messages Display */}
-        <div className="flex-1 w-full overflow-y-auto mb-4 space-y-4">
-          {messages.map((message, index) => (
+      <div className="h-full flex flex-col">
+        <div className="flex flex-col w-full max-w-4xl mx-auto px-4 py-6 h-full">
+          {/* Hero Section - Only show when no messages */}
+          {!hasMessages && (
+            <div className="flex flex-col items-center text-center space-y-8 mb-12 flex-shrink-0">
+              <div className="space-y-6">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
+                  say hey to your <span className="text-6xl md:text-7xl lg:text-8xl font-extrabold text-primary">Flow Mate</span>
+                </h1>
+              </div>
+              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
+                Automate your Flow blockchain actions with ease. Schedule transactions, 
+                manage DeFi activities, and take control of your crypto workflow.
+              </p>
+            </div>
+          )}
+
+          {/* Messages Display */}
+          {hasMessages && (
+            <div className="flex-1 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
+              <ScrollArea className="h-full">
+                <div className="px-6 py-6 space-y-4">
+                  {messages.map((message, index) => (
             <div key={index} className="w-full">
               {message.parts.map((part, i) => {
                 if (part.type === 'text') {
@@ -166,7 +196,11 @@ export default function ConnectWallet() {
                   
                   // Handle parameter request form
                   if (toolName === 'requestParameters') {
-                    const paramRequest = toolPart.result || toolPart as ParamRequest;
+                    // Extract the parameter request from the tool result
+                    // The structure could be: toolPart.result, toolPart.args, or toolPart itself
+                    const rawData = toolPart.result || toolPart.args || toolPart;
+                    const paramRequest = rawData as ParamRequest;
+                    
                     return (
                       <div key={`${message.id}-tool-${i}`} className="flex justify-start gap-3">
                         <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
@@ -189,21 +223,48 @@ export default function ConnectWallet() {
                   }
                   
                   // Handle transaction tool results
+                  const txKey = `${message.id}-${i}`;
+                  const txId = completedTransactions[txKey];
+                  
                   return (
-                    <div key={`${message.id}-tool-${i}`} className="flex justify-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
-                        <Bot className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-4 max-w-[80%]">
-                        <p className="text-sm font-semibold text-green-800 dark:text-green-200 mb-2">
-                          Transaction Ready
-                        </p>
-                        <button
-                          onClick={() => setSelectedTransaction(toolPart.result || toolPart)}
-                          className="text-sm text-green-600 dark:text-green-400 hover:underline"
-                        >
-                          Review & Sign Transaction
-                        </button>
+                    <div key={`${message.id}-tool-${i}`} className="flex justify-center w-full my-6">
+                      <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border-2 border-green-400 dark:border-green-600 rounded-2xl p-6 max-w-md w-full shadow-lg">
+                        {txId ? (
+                          // Show transaction link if completed
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="text-center">
+                              <p className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2">
+                                ✅ Transaction Sent Successfully!
+                              </p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                                View your transaction on the blockchain
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <TransactionLink txId={txId} variant='primary' />
+                            </div>
+                          </div>
+                        ) : (
+                          // Show sign button if not completed
+                          <>
+                            <button
+                              onClick={() => {
+                                // Extract the actual transaction data from the tool call result
+                                // The structure is: { output: { name, code, args, ... } }
+                                const rawData = toolPart.result || toolPart;
+                                const txData = rawData.output || rawData;
+                                
+                                setSelectedTransaction({ ...txData, _key: txKey });
+                              }}
+                              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-md"
+                            >
+                              🔐 Review & Sign Transaction
+                            </button>
+                            <p className="text-xs text-center text-gray-600 dark:text-gray-400 mt-3">
+                              Click to review transaction details before signing
+                            </p>
+                          </>
+                        )}
                       </div>
                     </div>
                   );
@@ -228,41 +289,45 @@ export default function ConnectWallet() {
               </div>
             </div>
           )}
-        </div>
+                </div>
+              </ScrollArea>
+            </div>
+          )}
 
-        {/* Input Area */}
-        <div className="w-full pb-4">
-          <form className="flex w-full items-center gap-2" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-            <InputGroup className={`h-14 rounded-3xl border-2 shadow-lg hover:shadow-xl transition-all bg-white/10 backdrop-blur-sm ${
-              isRecording ? 'border-red-400 ring-2 ring-red-200' : 'border-gray-200'
-            }`}>
-              <InputGroupInput 
-                value={isRecording ? `Recording... ${recordingTime}s` : input} 
-                onChange={(e) => setInput(e.target.value)} 
-                placeholder={isTranscribing ? "Transcribing..." : "Talk to your Flow Mate..."} 
-                className="text-base px-6 placeholder:text-muted-foreground/60"
-                disabled={isRecording || isTranscribing || isLoading}
-              />
-              <InputGroupAddon align="inline-end" className="pr-3.5">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <InputGroupButton 
-                      variant={input.length > 0 || isRecording ? "default" : "secondary"} 
-                      size="icon-sm"
-                      onClick={handleSubmit}
-                      disabled={isTranscribing || isLoading}
-                      className="rounded-full h-10 w-10"
-                    >
-                      {getButtonIcon()}
-                    </InputGroupButton>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" sideOffset={8}>
-                    <p>{getTooltipText()}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </InputGroupAddon>
-            </InputGroup>
-          </form>
+          {/* Input Area */}
+          <div className={`w-full flex-shrink-0 ${hasMessages ? 'mt-4' : ''}`}>
+            <form className="flex w-full items-center gap-2" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+              <InputGroup className={`h-14 rounded-3xl border-2 shadow-lg hover:shadow-xl transition-all bg-white dark:bg-gray-800 ${
+                isRecording ? 'border-red-400 ring-2 ring-red-200' : 'border-gray-300 dark:border-gray-600'
+              }`}>
+                <InputGroupInput 
+                  value={isRecording ? `Recording... ${recordingTime}s` : input} 
+                  onChange={(e) => setInput(e.target.value)} 
+                  placeholder={isTranscribing ? "Transcribing..." : "Talk to your Flow Mate..."} 
+                  className="text-base px-6 placeholder:text-muted-foreground/60"
+                  disabled={isRecording || isTranscribing || isLoading}
+                />
+                <InputGroupAddon align="inline-end" className="pr-3.5">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <InputGroupButton 
+                        variant={input.length > 0 || isRecording ? "default" : "secondary"} 
+                        size="icon-sm"
+                        onClick={handleSubmit}
+                        disabled={isTranscribing || isLoading}
+                        className="rounded-full h-10 w-10"
+                      >
+                        {getButtonIcon()}
+                      </InputGroupButton>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" sideOffset={8}>
+                      <p>{getTooltipText()}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </InputGroupAddon>
+              </InputGroup>
+            </form>
+          </div>
         </div>
       </div>
 
@@ -271,6 +336,16 @@ export default function ConnectWallet() {
         <TransactionConfirmation
           transaction={selectedTransaction}
           onClose={() => setSelectedTransaction(null)}
+          onSuccess={(txId) => {
+            // Store the transaction ID with its key
+            if (selectedTransaction._key) {
+              setCompletedTransactions(prev => ({
+                ...prev,
+                [selectedTransaction._key]: txId
+              }));
+            }
+            setSelectedTransaction(null);
+          }}
         />
       )}
     </>

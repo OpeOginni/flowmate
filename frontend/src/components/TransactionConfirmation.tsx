@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { Button } from './ui/button';
-import { TransactionButton, TransactionDialog, TransactionLink } from '@onflow/react-sdk';
+import { TransactionButton, TransactionDialog } from '@onflow/react-sdk';
 import * as fcl from '@onflow/fcl';
-import { AlertCircle, ExternalLink } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 interface TransactionArg {
   name: string;
@@ -16,20 +16,22 @@ interface TransactionPayload {
   name: string;
   codePath: string;
   code: string;
-  args: TransactionArg[];
+  args?: TransactionArg[];
   description: string;
 }
 
 interface TransactionConfirmationProps {
   transaction: TransactionPayload;
   onClose: () => void;
+  onSuccess?: (txId: string) => void;
 }
 
 export default function TransactionConfirmation({ 
   transaction, 
-  onClose 
+  onClose,
+  onSuccess 
 }: TransactionConfirmationProps) {
-  const [editedArgs, setEditedArgs] = useState<TransactionArg[]>(transaction.args);
+  const [editedArgs, setEditedArgs] = useState<TransactionArg[]>(transaction.args || []);
   const [txId, setTxId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -39,28 +41,47 @@ export default function TransactionConfirmation({
     setEditedArgs(updated);
   };
 
+  // Helper to format UFix64 values (must have decimal point)
+  const formatUFix64 = (value: string | number): string => {
+    const str = typeof value === 'number' ? value.toString() : value;
+    // If the string doesn't contain a decimal point, add .0
+    return str.includes('.') ? str : `${str}.0`;
+  };
+
   // Convert args to FCL format
   const convertToFclArgs = (arg: any, t: any) => {
-    return editedArgs.map((argItem) => {
+    
+    const converted = editedArgs.map((argItem, index) => {
       const { type, value } = argItem;
       
+      let fclArg;
       switch (type) {
         case 'Address':
-          return arg(value as string, t.Address);
+          fclArg = arg(value as string, t.Address);
+          break;
         case 'UFix64':
-          return arg(value as string, t.UFix64);
+          const ufix64Value = formatUFix64(value as string);
+          fclArg = arg(ufix64Value, t.UFix64);
+          break;
         case 'UInt64':
-          return arg(value as string, t.UInt64);
+          fclArg = arg(value as string, t.UInt64);
+          break;
         case 'UInt8':
-          return arg(value as string, t.UInt8);
+          fclArg = arg(value as string, t.UInt8);
+          break;
         case 'String':
-          return arg(value as string, t.String);
+          fclArg = arg(value as string, t.String);
+          break;
         case 'Bool':
-          return arg(value as boolean, t.Bool);
+          fclArg = arg(value as boolean, t.Bool);
+          break;
         default:
-          return arg(value as string, t.String);
+          fclArg = arg(value as string, t.String);
       }
+      return fclArg;
     });
+    
+    return converted;
   };
 
   return (
@@ -124,16 +145,9 @@ export default function TransactionConfirmation({
           </details>
 
           {/* Action Buttons */}
-          <div className="flex gap-3">
-            <Button
-              onClick={onClose}
-              variant="outline"
-              className="flex-1"
-            >
-              Cancel
-            </Button>
+          <div className="flex flex-col gap-3">
             <TransactionButton
-              label="Sign & Send"
+              label="🔐 Sign & Send Transaction"
               transaction={{
                 cadence: transaction.code,
                 args: convertToFclArgs,
@@ -141,33 +155,36 @@ export default function TransactionConfirmation({
               }}
               mutation={{
                 onSuccess: (data) => {
-                  console.log("Transaction ID:", data);
                   setTxId(data);
                   setDialogOpen(true);
+                  
+                  // Call onSuccess callback if provided
+                  if (onSuccess) {
+                    onSuccess(data);
+                  }
                 },
                 onError: (error) => {
-                  console.error("Transaction failed:", error);
+                  console.error('=== Transaction Failed ===');
+                  console.error("Transaction Name:", transaction.name);
+                  console.error("Error:", error);
+                  console.error("Error message:", error instanceof Error ? error.message : 'Unknown error');
+                  console.error("Error stack:", error instanceof Error ? error.stack : 'No stack');
+                  console.error("Transaction Code:", transaction.code?.substring(0, 300));
+                  console.error("Args:", JSON.stringify(editedArgs, null, 2));
+                  console.error('==========================');
                   alert(`Transaction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
                 }
               }}
-              className="flex-1"
+              className="w-full h-12 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white"
             />
+            <Button
+              onClick={onClose}
+              variant="outline"
+              className="w-full"
+            >
+              Cancel
+            </Button>
           </div>
-
-          {/* Transaction Link (if tx submitted) */}
-          {txId && (
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  Transaction submitted
-                </span>
-                <div className="flex items-center gap-1">
-                  <TransactionLink txId={txId} variant='outline' />
-                  <ExternalLink className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

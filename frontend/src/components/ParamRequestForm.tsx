@@ -19,8 +19,9 @@ export default function ParamRequestForm({
 }: ParamRequestFormProps) {
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     // Initialize with defaults and known values
-    const initial: Record<string, unknown> = { ...request.known };
-    request.missing.forEach(field => {
+    const initial: Record<string, unknown> = { ...(request.known || {}) };
+    const missingFields = request.missing || [];
+    missingFields.forEach(field => {
       if (field.default !== undefined) {
         initial[field.id] = field.default;
       }
@@ -96,7 +97,8 @@ export default function ParamRequestForm({
 
     // Validate all fields
     const newErrors: Record<string, string> = {};
-    request.missing.forEach(field => {
+    const missingFields = request.missing || [];
+    missingFields.forEach(field => {
       const error = validateField(field, values[field.id]);
       if (error) {
         newErrors[field.id] = error;
@@ -194,7 +196,7 @@ export default function ParamRequestForm({
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
-        {request.missing.map(field => renderField(field))}
+        {(request.missing || []).map(field => renderField(field))}
 
         {/* Actions */}
         <div className="flex gap-3 pt-4">

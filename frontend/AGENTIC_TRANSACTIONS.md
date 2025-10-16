@@ -69,11 +69,12 @@ Claim staking rewards and automatically restake them.
 ## Architecture
 
 ### Tech Stack
-- **AI Model**: OpenAI GPT-4o via OpenRouter
+- **AI Model**: OpenAI GPT-4o / Qwen3-VL via OpenRouter
 - **AI Framework**: Vercel AI SDK
 - **Backend**: Next.js API Routes
-- **Frontend**: React with @ai-sdk/react
+- **Frontend**: React with @ai-sdk/react and @onflow/react-sdk
 - **Blockchain**: Flow via FCL (Flow Client Library)
+- **Transaction Templating**: Dynamic contract address injection based on network
 
 ### Component Overview
 
@@ -273,6 +274,9 @@ frontend/
 │   │   ├── ParamRequestForm.tsx              # Dynamic form for missing parameters
 │   │   └── TransactionConfirmation.tsx       # Transaction review modal (uses Flow SDK hooks)
 │   └── server/
+│       ├── lib/
+│       │   ├── contract-addresses.ts         # Network-specific contract address mappings
+│       │   └── template-transaction.ts       # Transaction templating engine
 │       ├── providers/
 │       │   └── openrouter.ts                 # OpenRouter client
 │       ├── schemas/
@@ -283,6 +287,66 @@ frontend/
 │           ├── request-params.ts             # Parameter collection tool
 │           └── param-helpers.ts              # Helper functions for field requirements
 ```
+
+## Transaction Templating System
+
+FlowMate uses a sophisticated transaction templating system to inject the correct contract addresses based on the target network (mainnet, testnet, or emulator).
+
+### How It Works
+
+1. **Cadence Transaction Files** - Stored in `contracts/cadence/transactions/` with generic import statements:
+   ```cadence
+   import FlowToken from "FlowToken"
+   import USDCFlow from "USDCFlow"
+   import FungibleToken from "FungibleToken"
+   ```
+
+2. **Contract Address Mapping** - `contract-addresses.ts` maintains address mappings for each network:
+   ```typescript
+   {
+     mainnet: {
+       FlowToken: '0x1654653399040a61',
+       USDCFlow: '0xf1ab99c82dee3526',
+       FungibleToken: '0xf233dcee88fe0abe',
+       // ...
+     },
+     testnet: {
+       FlowToken: '0x7e60df042a9c0868',
+       USDCFlow: '0x64adf39cbc354fcb',
+       FungibleToken: '0x9a0766d93b6608b7',
+       // ...
+     }
+   }
+   ```
+
+3. **Dynamic Templating** - The `templateTransaction()` function replaces import statements with actual addresses:
+   ```cadence
+   // Before templating:
+   import FlowToken from "FlowToken"
+   
+   // After templating (testnet):
+   import FlowToken from 0x7e60df042a9c0868
+   ```
+
+4. **Network Selection** - The frontend detects the user's wallet network and sends it to the API:
+   ```typescript
+   // Frontend (MainPageInput.tsx)
+   const { currentNetwork } = useNetworkSwitch()
+   // Sent to API in request body
+   
+   // Backend (api/chat/route.ts)
+   const userNetwork = network || process.env.NEXT_PUBLIC_FLOW_NETWORK || 'testnet';
+   setFlowNetwork(userNetwork);
+   ```
+
+### Benefits
+
+✅ **Single Source of Truth** - One transaction file works across all networks  
+✅ **User-Centric** - Automatically uses the network the user's wallet is connected to  
+✅ **Network Flexibility** - Easily switch between mainnet, testnet, and emulator  
+✅ **Type Safety** - Contract addresses are validated and type-safe  
+✅ **Maintainability** - Contract address updates happen in one central location  
+✅ **Logging** - Built-in logging shows exactly how imports are being transformed
 
 ### Structured Parameter Collection System
 

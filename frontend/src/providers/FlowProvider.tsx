@@ -17,6 +17,9 @@ interface FlowConfig {
   discoveryWallet: string
   discoveryAuthnEndpoint: string
   flowNetwork: string
+  USDCFlow: string
+  FlowToken: string
+  FungibleToken: string
 }
 
 const NetworkSwitchContext = createContext<
@@ -41,6 +44,9 @@ const flowConfig: Record<FlowNetwork, FlowConfig> = {
     discoveryWallet: "http://localhost:8701/fcl/authn",
     discoveryAuthnEndpoint: "http://localhost:8701/fcl/authn",
     flowNetwork: "local" as const,
+    USDCFlow: "",
+    FlowToken: "",
+    FungibleToken: "",
   },
   testnet: {
     accessNodeUrl: "https://rest-testnet.onflow.org",
@@ -48,6 +54,9 @@ const flowConfig: Record<FlowNetwork, FlowConfig> = {
     discoveryAuthnEndpoint:
       "https://fcl-discovery.onflow.org/api/testnet/authn",
     flowNetwork: "testnet" as const,
+    USDCFlow: "0x64adf39cbc354fcb",
+    FlowToken: "0x7e60df042a9c0868",
+    FungibleToken: "0x9a0766d93b6608b7",
   },
   mainnet: {
     accessNodeUrl: "https://rest-mainnet.onflow.org",
@@ -55,6 +64,9 @@ const flowConfig: Record<FlowNetwork, FlowConfig> = {
     discoveryAuthnEndpoint:
       "https://fcl-discovery.onflow.org/api/mainnet/authn",
     flowNetwork: "mainnet" as const,
+    USDCFlow: "0xf1ab99c82dee3526",
+    FlowToken: "0x1654653399040a61",
+    FungibleToken: "0xf233dcee88fe0abe",
   },
 }
 
@@ -89,6 +101,14 @@ function NetworkSwitchProvider({children}: {children: React.ReactNode}) {
             "https://avatars.githubusercontent.com/u/62387156?v=4",
           "fcl.limit": 1000,
           "fcl.walletconnect.projectId": "9b70cfa398b2355a5eb9b1cf99f4a981",
+        }).load({
+          flowJSON: {
+            contracts: {
+              USDCFlow: config.USDCFlow,
+              FlowToken: config.FlowToken,
+              FungibleToken: config.FungibleToken,
+            }
+          }
         })
 
         // Update local state

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { streamText, convertToModelMessages, stepCountIs, type UIMessage, type UIDataTypes, type InferUITools } from 'ai';
 import { openrouter } from '@/server/providers/openrouter';
-import { flowTransactionTools } from '@/server/tools/flow-transactions';
+import { flowTransactionTools, setFlowNetwork } from '@/server/tools/flow-transactions';
 import { requestParametersTool } from '@/server/tools/request-params';
+import type { FlowNetwork } from '@/server/lib/contract-addresses';
 
 // Validate Flow wallet address format
 function isValidFlowAddress(address: string): boolean {
@@ -72,6 +73,17 @@ You: "I can help you send FLOW tokens. Let me collect the required information."
   known: { tokenType: "FlowToken" }
 }]
 
+User: "Swap 10 FLOW for USDC"
+You: "I'll prepare a transaction to swap 10 FLOW tokens for USDC tokens."
+[Call swapperAction tool directly - all params provided]
+{
+  action: "swapperAction",
+  actionLabel: "Swap Tokens",
+  reason: "To swap 10 FLOW tokens for USDC tokens",
+  known: { fromToken: "FlowToken", toToken: "USDCFlow", amount: 10.0 }
+}
+[Call swapperAction tool directly - all params provided]
+
 User: "Schedule swap to USDC tomorrow"
 You: "I'll help you schedule a token swap to USDC for tomorrow."
 [Call requestParameters with:
@@ -90,7 +102,7 @@ You: "I'll help you schedule a token swap to USDC for tomorrow."
 User: "What can you do?"
 You: "I can help you with various Flow blockchain actions: sending tokens, swapping tokens, scheduling future transactions, managing staking rewards, and more. What would you like to do?"
 
-Remember: You're preparing transactions for the user to approve and sign. Be clear, accurate, and use requestParameters for ANY missing information. The form will be displayed to the user to fill in the missing fields.`;
+Remember: You're preparing transactions for the user to approve and sign, not executing them yourself. Be clear, accurate, and use requestParameters for ANY missing information. The form will be displayed to the user to fill in the missing fields.`;
 
 export type ChatTools = InferUITools<typeof flowTransactionTools>;
 export type ChatMessage = UIMessage<never, UIDataTypes, ChatTools>;
@@ -99,15 +111,19 @@ export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, walletAddress }: { messages: ChatMessage[]; walletAddress?: string } = await req.json();
+    const { messages, walletAddress, network }: { 
+      messages: ChatMessage[]; 
+      walletAddress?: string;
+      network?: FlowNetwork;
+    } = await req.json();
 
     // Validate wallet address
-    if (!walletAddress || !isValidFlowAddress(walletAddress)) {
-      return NextResponse.json(
-        { error: 'Valid Flow wallet connection required. Please connect your wallet.' },
-        { status: 401 }
-      );
-    }
+    // if (!walletAddress || !isValidFlowAddress(walletAddress)) {
+    //   return NextResponse.json(
+    //     { error: 'Valid Flow wallet connection required. Please connect your wallet.' },
+    //     { status: 401 }
+    //   );
+    // }
 
     // Validate messages
     if (!messages || !Array.isArray(messages)) {
@@ -117,6 +133,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Set the Flow network for transaction templating based on user's connected network
+    // Fallback to env var if not provided, then to testnet
+    const userNetwork = network || (process.env.NEXT_PUBLIC_FLOW_NETWORK as FlowNetwork) || 'testnet';
+    setFlowNetwork(userNetwork);
+    console.log(`[Chat API] Using Flow network: ${userNetwork} (user connected: ${network || 'not specified'})`);
+
     // Combine all tools
     const allTools = {
       ...flowTransactionTools,
@@ -125,11 +147,11 @@ export async function POST(req: NextRequest) {
 
     // Stream the AI response with tools
     const result = streamText({
-      model: openrouter('openai/gpt-4o'),
+      model: openrouter('qwen/qwen3-vl-8b-instruct'),
       system: SYSTEM_PROMPT,
       messages: convertToModelMessages(messages),
       tools: allTools,
-      stopWhen: stepCountIs(5), // Allow multi-step tool reasoning
+      stopWhen: stepCountIs(1), // Limit to single tool call per response
       temperature: 0.7,
       maxOutputTokens: 2000,
     });

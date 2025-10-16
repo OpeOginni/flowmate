@@ -64,11 +64,12 @@ export const claimAndRestakeSchema = z.object({
 });
 
 /**
- * SwapperAction - Execute a token swap (Flow -> USDCFlow)
- * Note: This transaction has hardcoded values, but we expose them for potential future customization
+ * SwapperAction - Execute an immediate token swap
  */
 export const swapperActionSchema = z.object({
-  amount: z.number().positive().default(5.0).describe('Amount of FLOW tokens to swap (currently hardcoded to 5.0)'),
+  amount: z.number().positive().describe('Amount of tokens to swap'),
+  fromToken: tokenTypeSchema.describe('Token to swap from (FlowToken or USDCFlow)'),
+  toToken: tokenTypeSchema.describe('Token to swap to (FlowToken or USDCFlow)'),
 });
 
 /**

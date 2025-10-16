@@ -10,8 +10,13 @@ Create a `.env.local` file in the root of the frontend directory with the follow
 # OpenAI API Key for Whisper transcription
 OPENAI_API_KEY=your_openai_api_key_here
 
+# OpenRouter API Key for AI assistant (GPT-4o/Qwen)
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+
 # Flow Network Configuration
-NEXT_PUBLIC_FLOW_NETWORK=mainnet  # Options: mainnet, testnet, emulator
+# Options: mainnet, testnet, emulator
+# This determines which contract addresses are injected into transactions
+NEXT_PUBLIC_FLOW_NETWORK=testnet
 
 # App Details
 NEXT_PUBLIC_APP_DETAIL_URL=http://localhost:3000
