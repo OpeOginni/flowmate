@@ -2,6 +2,43 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Environment Variables
+
+Create a `.env.local` file in the root of the frontend directory with the following variables:
+
+```env
+# OpenAI API Key for Whisper transcription
+OPENAI_API_KEY=your_openai_api_key_here
+
+# OpenRouter API Key for AI assistant (GPT-4o/Qwen)
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+
+# Flow Network Configuration
+# Options: mainnet, testnet, emulator
+# This determines which contract addresses are injected into transactions
+NEXT_PUBLIC_FLOW_NETWORK=testnet
+
+# App Details
+NEXT_PUBLIC_APP_DETAIL_URL=http://localhost:3000
+```
+
+**Getting your OpenAI API Key:**
+1. Go to [OpenAI Platform](https://platform.openai.com/api-keys)
+2. Sign in or create an account
+3. Navigate to API Keys section
+4. Create a new API key
+5. Copy the key and add it to your `.env.local` file
+
+See `.env.example` for a template.
+
+**Getting your OpenRouter API Key:**
+1. Go to [OpenRouter](https://openrouter.ai/keys)
+2. Sign in or create an account
+3. Create a new API key
+4. Copy the key and add it to your `.env.local` file
+
+### Running the Development Server
+
 First, run the development server:
 
 ```bash

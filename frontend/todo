@@ -1,4 +1,11 @@
-[] - Get a Wireframe Done
-[] - Implement Wallet Connect
-    [] - Network Switching
-[] - Audio Capturing and Transiption (button, UX and implementation completed)
+[x] - Get a Wireframe Done
+[x] - Implement Wallet Connect
+    [x] - Network Switching
+[x] - Audio Capturing and Transiption (button, UX and implementation completed)
+
+[] - Test Scheduling System
+    [] - Deploy Scheduler Contract 
+
+[] - Add tools to check balance of user before giving another tool
+
+[] - Test Scheduling tool and Staking and Unstaking tool

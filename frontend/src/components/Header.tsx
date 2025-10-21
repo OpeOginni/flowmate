@@ -3,6 +3,7 @@
 import { useFlowCurrentUser, useFlowAccount, Connect } from "@onflow/react-sdk"
 import { useNetworkSwitch } from "@/providers/FlowProvider"
 import { useState } from "react"
+import { toast } from "sonner"
 
 export default function Header() {
     const { user, unauthenticate } = useFlowCurrentUser()
@@ -165,14 +166,14 @@ export default function Header() {
 
                             {/* Connect Button */}
                             <Connect
-                                onConnect={() => console.log("Connected!")}
-                                onDisconnect={() => console.log("Logged out")}
+                                onConnect={() => toast.success("Wallet Connected!")}
+                                onDisconnect={() => toast.info("Wallet Disconnected")}
                             />
                         </div>
                     ) : (
                         <Connect
-                            onConnect={() => console.log("Connected!")}
-                            onDisconnect={() => console.log("Logged out")}
+                            onConnect={() => toast.success("Wallet Connected!")}
+                            onDisconnect={() => toast.info("Wallet Disconnected")}
                         />
                     )}
                 </div>
