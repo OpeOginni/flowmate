@@ -36,4 +36,5 @@ The system can be used both on **Mainnet** and **Testnet**, best to test Swappin
 ### Media
 
 ![Demo use](https://github.com/OpeOginni/flowmate/blob/main/media/FlowMate_Demo.png)
-**Built during the Forte Hacks by Flow Hackathon**
+
+**Built by [Opeyemi](https://x.com/BrightOginni) during the Forte Hacks by Flow Hackathon**
