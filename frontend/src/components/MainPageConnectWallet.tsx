@@ -10,7 +10,10 @@ export default function MainPageConnectWallet() {
         {/* Hero Title */}
         <div className="space-y-6">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
-            say hey to your <span className="text-6xl md:text-7xl lg:text-8xl font-extrabold text-primary">Flow Mate</span>
+            say hey to your
+          </h1>
+          <h1 className="text-6xl md:text-7xl lg:text-8xl font-extrabold text-primary">
+            Flow Mate
           </h1>
         </div>
         

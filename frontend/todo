@@ -3,9 +3,13 @@
     [x] - Network Switching
 [x] - Audio Capturing and Transiption (button, UX and implementation completed)
 
-[] - Test Scheduling System
-    [] - Deploy Scheduler Contract 
+[x] - Add tools to check balance of user before giving another tool
 
-[] - Add tools to check balance of user before giving another tool
+[] - Test Scheduling System
+    [] - Deploy Scheduler Contract
+
+[] - Staking Token System 
+    [] - Add Staked Flow Token to the Mix
+
 
 [] - Test Scheduling tool and Staking and Unstaking tool

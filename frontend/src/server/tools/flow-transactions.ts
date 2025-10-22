@@ -65,7 +65,7 @@ function toUFix64String(value: number): string {
 // Network context that will be set by the API route
 let currentNetwork: FlowNetwork = 'testnet';
 
-export function setFlowNetwork(network: FlowNetwork) {
+export function setFlowTransactionNetwork(network: FlowNetwork) {
   currentNetwork = network;
 }
 

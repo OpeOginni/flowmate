@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { streamText, convertToModelMessages, stepCountIs, type UIMessage, type UIDataTypes, type InferUITools } from 'ai';
 import { openrouter } from '@/server/providers/openrouter';
-import { flowTransactionTools, setFlowNetwork } from '@/server/tools/flow-transactions';
+import { flowTransactionTools, setFlowTransactionNetwork } from '@/server/tools/flow-transactions';
 import { requestParametersTool } from '@/server/tools/request-params';
 import type { FlowNetwork } from '@/server/lib/contract-addresses';
+import { getUserBalanceTool } from '@/server/tools/flow-scripts';
 
 // Validate Flow wallet address format
 function isValidFlowAddress(address: string): boolean {
@@ -15,6 +16,7 @@ function isValidFlowAddress(address: string): boolean {
 const SYSTEM_PROMPT = `You are FlowMate's intelligent blockchain assistant. Your role is to help users interact with the Flow blockchain by understanding their intent and executing the appropriate on-chain actions.
 
 **Your capabilities:**
+- Get the balance of a token (FLOW or USDC) for a given address
 - Send tokens (FLOW or USDC) to addresses
 - Schedule token sends for future execution
 - Swap tokens (FLOW ↔ USDC)
@@ -44,6 +46,17 @@ When a user's request is incomplete, you MUST use the requestParameters tool to 
 - Timestamp: Unix timestamp in seconds (convert human time to timestamp)
 - String: Text values
 
+**CRITICAL: Balance Validation Requirements**
+BEFORE proceeding with ANY token transaction operation (send, swap, schedule send, schedule swap), you MUST:
+
+1. **Check Balance First**: Always call getUserBalanceTool to verify the user has sufficient funds for the transaction
+2. **Validate Sufficiency**: Compare the user's balance against the transaction amount
+3. **Handle Insufficient Funds**:
+   - If balance is insufficient: Tell the user they don't have enough funds and suggest topping up
+   - Show their current balance when informing them of insufficient funds
+   - DO NOT proceed with the transaction
+4. **Only Proceed When Sufficient**: Only call transaction tools after confirming adequate balance
+
 **Important guidelines:**
 1. NEVER fabricate addresses, amounts, or timestamps. Use requestParameters if missing.
 2. When scheduling transactions, convert human-readable times to Unix timestamps (seconds since epoch).
@@ -56,8 +69,15 @@ When a user's request is incomplete, you MUST use the requestParameters tool to 
 **Example interactions:**
 
 User: "Send 10 FLOW to 0x1234567890abcdef"
-You: "I'll prepare a transaction to send 10 FLOW tokens to 0x1234567890abcdef." 
+You: "I need to check if you have enough FLOW tokens before proceeding. Let me check your balance first."
+[Call getUserBalanceTool tool with user's address and FLOW token]
+"Based on your balance check, you have sufficient funds. I'll prepare a transaction to send 10 FLOW tokens to 0x1234567890abcdef."
 [Call sendToken tool directly - all params provided]
+
+User: "Send 50 FLOW to 0x1234567890abcdef"
+You: "Let me check your FLOW balance first to ensure you have sufficient funds."
+[Call getUserBalanceTool tool with user's address and FLOW token]
+"You currently have 25.5 FLOW tokens, which is not enough to send 50 FLOW tokens. You'll need to top up your wallet with at least 24.5 more FLOW tokens before you can complete this transaction."
 
 User: "Send some FLOW"
 You: "I can help you send FLOW tokens. Let me collect the required information." 
@@ -113,17 +133,17 @@ export async function POST(req: NextRequest) {
   try {
     const { messages, walletAddress, network }: { 
       messages: ChatMessage[]; 
-      walletAddress?: string;
+      walletAddress: string;
       network?: FlowNetwork;
     } = await req.json();
 
     // Validate wallet address
-    // if (!walletAddress || !isValidFlowAddress(walletAddress)) {
-    //   return NextResponse.json(
-    //     { error: 'Valid Flow wallet connection required. Please connect your wallet.' },
-    //     { status: 401 }
-    //   );
-    // }
+    if (!walletAddress) {
+      return NextResponse.json(
+        { error: 'Wallet address is required. Please connect your wallet.' },
+        { status: 401 }
+      );
+    }
 
     // Validate messages
     if (!messages || !Array.isArray(messages)) {
@@ -136,12 +156,13 @@ export async function POST(req: NextRequest) {
     // Set the Flow network for transaction templating based on user's connected network
     // Fallback to env var if not provided, then to testnet
     const userNetwork = network || (process.env.NEXT_PUBLIC_FLOW_NETWORK as FlowNetwork) || 'testnet';
-    setFlowNetwork(userNetwork);
+    setFlowTransactionNetwork(userNetwork);
     console.log(`[Chat API] Using Flow network: ${userNetwork} (user connected: ${network || 'not specified'})`);
 
     // Combine all tools
     const allTools = {
       ...flowTransactionTools,
+      getUserBalanceTool: getUserBalanceTool(walletAddress, userNetwork),
       requestParameters: requestParametersTool,
     };
 
@@ -151,7 +172,7 @@ export async function POST(req: NextRequest) {
       system: SYSTEM_PROMPT,
       messages: convertToModelMessages(messages),
       tools: allTools,
-      stopWhen: stepCountIs(1), // Limit to single tool call per response
+      stopWhen: stepCountIs(2), // Limit to single tool call per response
       temperature: 0.7,
       maxOutputTokens: 2000,
     });
