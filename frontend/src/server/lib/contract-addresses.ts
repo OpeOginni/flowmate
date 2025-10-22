@@ -33,6 +33,7 @@ export const CONTRACT_ADDRESSES: Record<FlowNetwork, ContractAddresses> = {
     FlowToken: '0x1654653399040a61',
     USDCFlow: '0xf1ab99c82dee3526',
     FungibleToken: '0xf233dcee88fe0abe',
+    FungibleTokenMetadataViews: '0xf233dcee88fe0abe',
     FlowTransactionScheduler: '0xe467b9dd11fa00df',
     FlowTransactionSchedulerUtils: '0xe467b9dd11fa00df', // Same as FlowTransactionScheduler on mainnet
     FlowMateActionHandler: '', // Your deployed contract address
@@ -51,6 +52,7 @@ export const CONTRACT_ADDRESSES: Record<FlowNetwork, ContractAddresses> = {
     FlowToken: '0x7e60df042a9c0868',
     USDCFlow: '0x64adf39cbc354fcb',
     FungibleToken: '0x9a0766d93b6608b7',
+    FungibleTokenMetadataViews: '0x9a0766d93b6608b7',
     FlowTransactionScheduler: '0x8c5303eaa26202d6',
     FlowTransactionSchedulerUtils: '0x8c5303eaa26202d6',
     FlowMateActionHandler: '', // Your deployed contract address
@@ -69,6 +71,7 @@ export const CONTRACT_ADDRESSES: Record<FlowNetwork, ContractAddresses> = {
     FlowToken: '0x0ae53cb6e3f42a79',
     USDCFlow: '0xf8d6e0586b0a20c7', // Placeholder
     FungibleToken: '0xee82856bf20e2aa6',
+    FungibleTokenMetadataViews: '0xee82856bf20e2aa6',
     FlowTransactionScheduler: '0xf8d6e0586b0a20c7',
     FlowTransactionSchedulerUtils: '0xf8d6e0586b0a20c7',
     FlowMateActionHandler: '0xf8d6e0586b0a20c7',

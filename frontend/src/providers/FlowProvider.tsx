@@ -38,7 +38,7 @@ export const useNetworkSwitch = () => {
 
 const flowNetwork =
   (process.env.NEXT_PUBLIC_FLOW_NETWORK as FlowNetwork) || "mainnet"
-const flowConfig: Record<FlowNetwork, FlowConfig> = {
+export const flowConfig: Record<FlowNetwork, FlowConfig> = {
   emulator: {
     accessNodeUrl: "http://localhost:8888",
     discoveryWallet: "http://localhost:8701/fcl/authn",
