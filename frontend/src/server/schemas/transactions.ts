@@ -4,7 +4,7 @@ import { z } from 'zod';
 const flowAddressSchema = z.string().regex(/^(0x)?[a-fA-F0-9]{16}$/, 'Invalid Flow address format');
 
 // Token type enum
-const tokenTypeSchema = z.enum(['FlowToken', 'USDCFlow']).describe('Token type to use');
+const tokenTypeSchema = z.enum(['FlowToken', 'USDCFlow', 'stFlowToken']).describe('Token type to use');
 
 // Priority enum (0-4)
 const prioritySchema = z.number().int().min(0).max(4).default(2).describe('Transaction priority (0=Low, 1=Below, 2=Medium, 3=Above, 4=High)');
@@ -15,7 +15,7 @@ const prioritySchema = z.number().int().min(0).max(4).default(2).describe('Trans
 export const sendTokenSchema = z.object({
   recipient: flowAddressSchema.describe('Flow address of the recipient'),
   amount: z.number().positive().describe('Amount of tokens to send'),
-  tokenType: tokenTypeSchema.describe('Type of token to send (FlowToken or USDCFlow)'),
+  tokenType: tokenTypeSchema.describe('Type of token to send (FlowToken or USDCFlow or stFlowToken)'),
 });
 
 /**
@@ -28,15 +28,15 @@ export const scheduleSendTokenSchema = z.object({
   priority: prioritySchema,
   executionEffort: z.number().int().positive().default(1000).describe('Execution effort (gas limit)'),
   feeAmount: z.number().positive().default(0.001).describe('Fee amount in FLOW tokens'),
-  tokenType: tokenTypeSchema.describe('Type of token to send (FlowToken or USDCFlow)'),
+  tokenType: tokenTypeSchema.describe('Type of token to send (FlowToken or USDCFlow or stFlowToken)'),
 });
 
 /**
  * ScheduleSwapToken - Schedule a token swap for future execution
  */
 export const scheduleSwapTokenSchema = z.object({
-  fromToken: tokenTypeSchema.describe('Token to swap from (FlowToken or USDCFlow)'),
-  toToken: tokenTypeSchema.describe('Token to swap to (FlowToken or USDCFlow)'),
+  fromToken: tokenTypeSchema.describe('Token to swap from (FlowToken or USDCFlow or stFlowToken)'),
+  toToken: tokenTypeSchema.describe('Token to swap to (FlowToken or USDCFlow or stFlowToken)'),
   amount: z.number().positive().describe('Amount of tokens to swap'),
   timestamp: z.number().positive().describe('Unix timestamp (in seconds) when to execute the swap'),
   priority: prioritySchema,
@@ -68,8 +68,8 @@ export const claimAndRestakeSchema = z.object({
  */
 export const swapperActionSchema = z.object({
   amount: z.number().positive().describe('Amount of tokens to swap'),
-  fromToken: tokenTypeSchema.describe('Token to swap from (FlowToken or USDCFlow)'),
-  toToken: tokenTypeSchema.describe('Token to swap to (FlowToken or USDCFlow)'),
+  fromToken: tokenTypeSchema.describe('Token to swap from (FlowToken or USDCFlow or stFlowToken)'),
+  toToken: tokenTypeSchema.describe('Token to swap to (FlowToken or USDCFlow or stFlowToken)'),
 });
 
 /**

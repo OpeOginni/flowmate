@@ -1,5 +1,6 @@
 import "FlowToken"
 import "USDCFlow"
+import "stFlowToken"
 import "SwapConfig"
 import "IncrementFiSwapConnectors"
 import "DeFiActions"
@@ -17,6 +18,9 @@ access(all) fun main(amount: UFix64, fromToken: String, toToken: String, reverse
     } else if fromToken == "USDCFlow" {
         fromKey = SwapConfig.SliceTokenTypeIdentifierFromVaultType(vaultTypeIdentifier: Type<@USDCFlow.Vault>().identifier)
         inVaultType = Type<@USDCFlow.Vault>()
+    } else if fromToken == "stFlowToken" {
+        fromKey = SwapConfig.SliceTokenTypeIdentifierFromVaultType(vaultTypeIdentifier: Type<@stFlowToken.Vault>().identifier)
+        inVaultType = Type<@stFlowToken.Vault>()
     } else {
         panic("Unsupported fromToken: ".concat(fromToken))
     }
@@ -27,6 +31,9 @@ access(all) fun main(amount: UFix64, fromToken: String, toToken: String, reverse
     } else if toToken == "USDCFlow" {
         toKey = SwapConfig.SliceTokenTypeIdentifierFromVaultType(vaultTypeIdentifier: Type<@USDCFlow.Vault>().identifier)
         outVaultType = Type<@USDCFlow.Vault>()
+    } else if toToken == "stFlowToken" {
+        toKey = SwapConfig.SliceTokenTypeIdentifierFromVaultType(vaultTypeIdentifier: Type<@stFlowToken.Vault>().identifier)
+        outVaultType = Type<@stFlowToken.Vault>()
     } else {
         panic("Unsupported toToken: ".concat(toToken))
     }
@@ -49,3 +56,5 @@ access(all) fun main(amount: UFix64, fromToken: String, toToken: String, reverse
     
     return quote.outAmount
 }
+
+// flow scripts execute ./cadence/scripts/GetSwapperQuote.cdc --network mainnet <amount> <fromToken> <toToken> <reverse>

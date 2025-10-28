@@ -78,7 +78,7 @@ export const commonFields = {
     type: 'Enum' as FieldType,
     required: true,
     description: 'Type of token to use',
-    enumOptions: ['FlowToken', 'USDCFlow'],
+    enumOptions: ['FlowToken', 'USDCFlow', 'stFlowToken'],
     default: 'FlowToken',
   },
   timestamp: {
@@ -129,7 +129,7 @@ export const commonFields = {
     type: 'Enum' as FieldType,
     required: true,
     description: 'Token to swap from',
-    enumOptions: ['FlowToken', 'USDCFlow'],
+    enumOptions: ['FlowToken', 'USDCFlow', 'stFlowToken'],
   },
   toToken: {
     id: 'toToken',
@@ -137,7 +137,7 @@ export const commonFields = {
     type: 'Enum' as FieldType,
     required: true,
     description: 'Token to swap to',
-    enumOptions: ['FlowToken', 'USDCFlow'],
+    enumOptions: ['FlowToken', 'USDCFlow', 'stFlowToken'],
   },
   pid: {
     id: 'pid',
