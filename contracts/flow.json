@@ -6,16 +6,10 @@
 				"testing": "0000000000000007"
 			}
 		},
-		"FlowMateActionHandler": {
-			"source": "cadence/contracts/FlowMateActionHandler.cdc",
+		"FlowMateScheduledActionsHandler": {
+			"source": "cadence/contracts/FlowMateScheduledActionsHandler.cdc",
 			"aliases": {
 				"testing": "0000000000000008"
-			}
-		},
-		"FlowMateTransferTransactionHandler": {
-			"source": "cadence/contracts/FlowMateTransferTransactionHandler.cdc",
-			"aliases": {
-				"testing": "0000000000000009"
 			}
 		}
 	},
@@ -333,6 +327,11 @@
 				"StakingError",
 				"FlowTransactionSchedulerUtils",
 				"IncrementFiPoolLiquidityConnectors"
+			]
+		},
+		"mainnet": {
+			"mainnet": [
+				"FlowMateScheduledActionsHandler"
 			]
 		}
 	}

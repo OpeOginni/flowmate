@@ -7,7 +7,7 @@ import "IncrementFiSwapConnectors"
 import "DeFiActions"
 import "MetadataViews"
 
-access(all) contract FlowMateActionHandler {
+access(all) contract FlowMateScheduledActionsHandler {
 
     access(all) let HandlerStoragePath: StoragePath
     access(all) let HandlerPublicPath: PublicPath
@@ -207,9 +207,9 @@ access(all) contract FlowMateActionHandler {
         access(all) fun resolveView(_ view: Type): AnyStruct? {
             switch view {
                 case Type<StoragePath>():
-                    return FlowMateActionHandler.HandlerStoragePath
+                    return FlowMateScheduledActionsHandler.HandlerStoragePath
                 case Type<PublicPath>():
-                    return FlowMateActionHandler.HandlerPublicPath
+                    return FlowMateScheduledActionsHandler.HandlerPublicPath
                 case Type<MetadataViews.Display>():
                     return MetadataViews.Display(
                         name: "FlowMate Universal Action Handler",
