@@ -8,6 +8,7 @@ export type FlowNetwork = 'mainnet' | 'testnet' | 'emulator';
 export interface ContractAddresses {
   FlowToken: string;
   USDCFlow: string;
+  stFlowToken: string;
   FungibleToken: string;
   FlowTransactionScheduler: string;
   FlowTransactionSchedulerUtils: string;
@@ -32,6 +33,7 @@ export const CONTRACT_ADDRESSES: Record<FlowNetwork, ContractAddresses> = {
   mainnet: {
     FlowToken: '0x1654653399040a61',
     USDCFlow: '0xf1ab99c82dee3526',
+    stFlowToken: '0xd6f80565193ad727',
     FungibleToken: '0xf233dcee88fe0abe',
     FungibleTokenMetadataViews: '0xf233dcee88fe0abe',
     FlowTransactionScheduler: '0xe467b9dd11fa00df',
@@ -51,6 +53,7 @@ export const CONTRACT_ADDRESSES: Record<FlowNetwork, ContractAddresses> = {
   testnet: {
     FlowToken: '0x7e60df042a9c0868',
     USDCFlow: '0x64adf39cbc354fcb',
+    stFlowToken: '0xd6f80565193ad727',
     FungibleToken: '0x9a0766d93b6608b7',
     FungibleTokenMetadataViews: '0x9a0766d93b6608b7',
     FlowTransactionScheduler: '0x8c5303eaa26202d6',
@@ -70,6 +73,7 @@ export const CONTRACT_ADDRESSES: Record<FlowNetwork, ContractAddresses> = {
   emulator: {
     FlowToken: '0x0ae53cb6e3f42a79',
     USDCFlow: '0xf8d6e0586b0a20c7', // Placeholder
+    stFlowToken: '0xd6f80565193ad727',
     FungibleToken: '0xee82856bf20e2aa6',
     FungibleTokenMetadataViews: '0xee82856bf20e2aa6',
     FlowTransactionScheduler: '0xf8d6e0586b0a20c7',

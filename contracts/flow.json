@@ -90,7 +90,7 @@
 		},
 		"FlowToken": {
 			"source": "testnet://7e60df042a9c0868.FlowToken",
-			"hash": "a7b219cf8596c1116aa219bb31535faa79ebf5e02d16fa594acd0398057674e1",
+			"hash": "cefb25fd19d9fc80ce02896267eb6157a6b0df7b1935caa8641421fe34c0e67a",
 			"aliases": {
 				"emulator": "0ae53cb6e3f42a79",
 				"mainnet": "1654653399040a61",
@@ -268,6 +268,13 @@
 				"emulator": "f8d6e0586b0a20c7",
 				"mainnet": "1d7e57aa55817448",
 				"testnet": "631e88ae7f1d7c20"
+			}
+		},
+		"stFlowToken": {
+			"source": "mainnet://d6f80565193ad727.stFlowToken",
+			"hash": "09b1350a55646fdee652fddf7927fc4b305da5a265cb1bd887e112d84fb5e2be",
+			"aliases": {
+				"mainnet": "d6f80565193ad727"
 			}
 		}
 	},

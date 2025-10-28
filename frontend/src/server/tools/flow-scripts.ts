@@ -11,6 +11,7 @@ interface FlowConfig {
   discoveryWallet: string
   discoveryAuthnEndpoint: string
   flowNetwork: string
+  stFlowToken: string
   USDCFlow: string
   FlowToken: string
   FungibleToken: string
@@ -23,6 +24,7 @@ const flowConfig: Record<FlowNetwork, FlowConfig> = {
     discoveryWallet: "http://localhost:8701/fcl/authn",
     discoveryAuthnEndpoint: "http://localhost:8701/fcl/authn",
     flowNetwork: "local" as const,
+    stFlowToken: "",
     USDCFlow: "",
     FlowToken: "",
     FungibleToken: "",
@@ -34,6 +36,7 @@ const flowConfig: Record<FlowNetwork, FlowConfig> = {
     discoveryAuthnEndpoint:
       "https://fcl-discovery.onflow.org/api/testnet/authn",
     flowNetwork: "testnet" as const,
+    stFlowToken: "0xd6f80565193ad727",
     USDCFlow: "0x64adf39cbc354fcb",
     FlowToken: "0x7e60df042a9c0868",
     FungibleToken: "0x9a0766d93b6608b7",
@@ -45,6 +48,7 @@ const flowConfig: Record<FlowNetwork, FlowConfig> = {
     discoveryAuthnEndpoint:
       "https://fcl-discovery.onflow.org/api/mainnet/authn",
     flowNetwork: "mainnet" as const,
+    stFlowToken: "0xd6f80565193ad727",
     USDCFlow: "0xf1ab99c82dee3526",
     FlowToken: "0x1654653399040a61",
     FungibleToken: "0xf233dcee88fe0abe",

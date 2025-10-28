@@ -1,5 +1,6 @@
 import "FlowToken"
 import "USDCFlow"
+import "stFlowToken"
 import "SwapConfig"
 import "IncrementFiSwapConnectors"
 import "FungibleToken"
@@ -35,6 +36,9 @@ transaction(amount: UFix64, fromToken: String, toToken: String) {
     } else if fromToken == "USDCFlow" {
       self.fromVaultType = Type<@USDCFlow.Vault>()
       self.fromStoragePath = USDCFlow.VaultStoragePath
+    } else if fromToken == "stFlowToken" {
+      self.fromVaultType = Type<@stFlowToken.Vault>()
+      self.fromStoragePath = stFlowToken.tokenVaultPath
     } else {
       panic("Unsupported fromToken: ".concat(fromToken))
     }
@@ -45,6 +49,9 @@ transaction(amount: UFix64, fromToken: String, toToken: String) {
     } else if toToken == "USDCFlow" {
       self.toVaultType = Type<@USDCFlow.Vault>()
       self.toStoragePath = USDCFlow.VaultStoragePath
+    } else if toToken == "stFlowToken" {
+      self.toVaultType = Type<@stFlowToken.Vault>()
+      self.toStoragePath = stFlowToken.tokenVaultPath
     } else {
       panic("Unsupported toToken: ".concat(toToken))
     }

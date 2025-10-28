@@ -266,13 +266,19 @@ function ChatInterface({
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 3
                                 });
+                              } else if (tokenType === 'stFlowToken') {
+                                // stFlowToken typically has 8 decimals
+                                return balanceStr.toLocaleString('en-US', {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 3
+                                });
                               }
                               return balanceStr;
                             };
 
 
 
-                            const tokenIcon = toolInput.tokenType === 'FlowToken' ? <img src="/flow.svg" alt="Flow Logo" className="w-6 h-6" /> : <img src="/usdc_flow.svg" alt="USDC Logo" className="w-6 h-6" />;
+                            const tokenIcon = toolInput.tokenType === 'FlowToken' ? <img src="/flow.svg" alt="Flow Logo" className="w-6 h-6" /> : toolInput.tokenType === 'USDCFlow' ? <img src="/usdc_flow.svg" alt="USDC Logo" className="w-6 h-6" /> : <img src="/stflow.svg" alt="stFLOW Logo" className="w-6 h-6" />;
                             const tokenColor = toolInput.tokenType === 'FlowToken' ? 'text-green-600' : 'text-blue-600';
                             const cardGradient = toolInput.tokenType === 'FlowToken'
                               ? 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20' :'from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20';
@@ -291,7 +297,7 @@ function ChatInterface({
                                       </div>
                                       <div className="text-center">
                                         <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                                          {toolInput.tokenType === 'FlowToken' ? 'FLOW' : 'USDCFlow'} Balance
+                                          {toolInput.tokenType === 'FlowToken' ? 'FLOW' : toolInput.tokenType === 'USDCFlow' ? 'USDC' : 'stFLOW'} Balance
                                         </h3>
                                         <p className="text-xs text-gray-600 dark:text-gray-400">
                                           Wallet: {user?.addr?.slice(0, 6)}...{user?.addr?.slice(-4)}
