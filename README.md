@@ -15,12 +15,18 @@ Flow Mate is a personal helper on Flow that helps you with multiple tasks on the
 
 The system can be used both on **Mainnet** and **Testnet**, best to test Swapping on Mainnet due to lack of proper trading liquidity on Testnet.
 
+### Deployed Flow Mate Scheduler Actions Contract
+
+- Mainnet - [`0x136a10c590912ef8`](https://www.flowscan.io/contract/A.136a10c590912ef8.FlowMateScheduledActionsHandler)
+
 ### Future Plans
 
 - [ ] Add more Tools with the release of Flow Forte Upgrade on mainnet
     - [ ] Staking and Unstaking Flow
     - [ ] Engagging in Flash loan and swap operations (best for simple traders)
-- [ ] Add feature for model to create scheduled transactions
+- [x] Add feature for model to create scheduled transactions
+    - [x] For Swapping Tokens
+    - [x] For Sending Tokens
 - [ ] Add more defi systems than IncrementFi once other implement Flow Actions
 
 ### Tech Stack

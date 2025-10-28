@@ -1,7 +1,8 @@
 import "FlowTransactionScheduler"
 import "FlowTransactionSchedulerUtils"
-import "FlowMateActionHandler"
+import "FlowMateScheduledActionsHandler"
 import "FlowToken"
+import "USDCFlow"
 import "FungibleToken"
 
 transaction(
@@ -15,13 +16,52 @@ transaction(
 ) {
     prepare(signer: auth(Storage, BorrowValue, Capabilities) &Account) {
         
+        // Auto-setup: Create manager if it doesn't exist
+        if !signer.storage.check<@{FlowTransactionSchedulerUtils.Manager}>(from: FlowTransactionSchedulerUtils.managerStoragePath) {
+            let manager <- FlowTransactionSchedulerUtils.createManager()
+            signer.storage.save(<-manager, to: FlowTransactionSchedulerUtils.managerStoragePath)
+
+            let managerCap = signer.capabilities.storage.issue<&{FlowTransactionSchedulerUtils.Manager}>(
+                FlowTransactionSchedulerUtils.managerStoragePath
+            )
+            signer.capabilities.publish(managerCap, at: FlowTransactionSchedulerUtils.managerPublicPath)
+        }
+
+        // Auto-setup: Create handler if it doesn't exist
+        if !signer.storage.check<@FlowMateScheduledActionsHandler.Handler>(from: FlowMateScheduledActionsHandler.HandlerStoragePath) {
+            
+            let flowVaultCap = signer.capabilities.storage.issue<auth(FungibleToken.Withdraw) &{FungibleToken.Vault}>(
+                /storage/flowTokenVault
+            )
+
+            let usdcVaultCap = signer.capabilities.storage.issue<auth(FungibleToken.Withdraw) &{FungibleToken.Vault}>(
+                USDCFlow.VaultStoragePath
+            )
+
+            let handler <- FlowMateScheduledActionsHandler.createHandler(
+                flowVaultCap: flowVaultCap,
+                usdcVaultCap: usdcVaultCap
+            )
+
+            signer.storage.save(<-handler, to: FlowMateScheduledActionsHandler.HandlerStoragePath)
+
+            let executeHandlerCap = signer.capabilities.storage.issue<auth(FlowTransactionScheduler.Execute) &{FlowTransactionScheduler.TransactionHandler}>(
+                FlowMateScheduledActionsHandler.HandlerStoragePath
+            )
+
+            let publicHandlerCap = signer.capabilities.storage.issue<&{FlowTransactionScheduler.TransactionHandler}>(
+                FlowMateScheduledActionsHandler.HandlerStoragePath
+            )
+            signer.capabilities.publish(publicHandlerCap, at: FlowMateScheduledActionsHandler.HandlerPublicPath)
+        }
+        
         let manager = signer.storage.borrow<auth(FlowTransactionSchedulerUtils.Owner) &{FlowTransactionSchedulerUtils.Manager}>(
             from: FlowTransactionSchedulerUtils.managerStoragePath
-        ) ?? panic("Manager not found. Run SetupFlowMateActions.cdc first")
+        ) ?? panic("Could not borrow manager after setup")
 
         var handlerCap: Capability<auth(FlowTransactionScheduler.Execute) &{FlowTransactionScheduler.TransactionHandler}>? = nil
         
-        let controllers = signer.capabilities.storage.getControllers(forPath: FlowMateActionHandler.HandlerStoragePath)
+        let controllers = signer.capabilities.storage.getControllers(forPath: FlowMateScheduledActionsHandler.HandlerStoragePath)
         
         for controller in controllers {
             if let cap = controller.capability as? Capability<auth(FlowTransactionScheduler.Execute) &{FlowTransactionScheduler.TransactionHandler}> {
@@ -43,7 +83,7 @@ transaction(
         let priorityEnum = FlowTransactionScheduler.Priority(rawValue: priority)
             ?? FlowTransactionScheduler.Priority.Medium
 
-        let actionData = FlowMateActionHandler.ActionData(
+        let actionData = FlowMateScheduledActionsHandler.ActionData(
             type: "send_token",
             parameters: {
                 "recipient": recipient,

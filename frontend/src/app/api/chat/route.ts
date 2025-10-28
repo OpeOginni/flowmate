@@ -4,7 +4,7 @@ import { openrouter } from '@/server/providers/openrouter';
 import { flowTransactionTools, setFlowTransactionNetwork } from '@/server/tools/flow-transactions';
 import { requestParametersTool } from '@/server/tools/request-params';
 import type { FlowNetwork } from '@/server/lib/contract-addresses';
-import { getUserBalanceTool } from '@/server/tools/flow-scripts';
+import { getUserBalanceTool, checkSetupStatusTool } from '@/server/tools/flow-scripts';
 
 // Validate Flow wallet address format
 function isValidFlowAddress(address: string): boolean {
@@ -12,8 +12,15 @@ function isValidFlowAddress(address: string): boolean {
   return flowAddressRegex.test(address);
 }
 
-// System prompt for the AI assistant
-const SYSTEM_PROMPT = `You are FlowMate's intelligent blockchain assistant. Your role is to help users interact with the Flow blockchain by understanding their intent and executing the appropriate on-chain actions.
+// Generate dynamic system prompt with current timestamp
+const generateSystemPrompt = (currentTimestamp: number) => `You are FlowMate's intelligent blockchain assistant. Your role is to help users interact with the Flow blockchain by understanding their intent and executing the appropriate on-chain actions.
+
+**CURRENT TIME INFORMATION**
+Current Unix Timestamp: ${currentTimestamp} seconds
+Current Date/Time: ${new Date(currentTimestamp * 1000).toUTCString()}
+Current Local Time: ${new Date(currentTimestamp * 1000).toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'long' })}
+
+IMPORTANT: When scheduling transactions, the timestamp MUST be greater than ${currentTimestamp}. Any timestamp less than this will fail as it's in the past.
 
 **Your capabilities:**
 - Get the balance of a token (FLOW or USDC) for a given address
@@ -57,14 +64,25 @@ BEFORE proceeding with ANY token transaction operation (send, swap, schedule sen
    - DO NOT proceed with the transaction
 4. **Only Proceed When Sufficient**: Only call transaction tools after confirming adequate balance
 
+**Scheduled Transactions**
+For scheduled transactions (scheduleSendToken, scheduleSwapToken):
+- No setup check needed - transactions automatically handle setup if required
+- Just collect required parameters (timestamp, amount, etc.) and proceed
+- Use the calendar picker for timestamp collection
+- CRITICAL: Ensure timestamp is in the FUTURE (greater than current timestamp shown above)
+- When user says "tomorrow", "next week", etc., calculate from CURRENT time, not arbitrary dates
+- Validate timestamp before proceeding - reject if timestamp < current timestamp
+- Proceed directly to scheduling after balance validation
+
 **Important guidelines:**
 1. NEVER fabricate addresses, amounts, or timestamps. Use requestParameters if missing.
 2. When scheduling transactions, convert human-readable times to Unix timestamps (seconds since epoch).
-3. Explain what you're about to do BEFORE calling any tool.
-4. If a user wants to schedule actions but hasn't set up FlowMate, inform them they need to run the setup first.
-5. For token sends/swaps, if token type is not specified, default to FlowToken.
-6. Be concise and helpful. Don't overwhelm users with technical details unless asked.
-7. After calling a transaction tool, the transaction will be presented to the user for approval and signing.
+3. ALWAYS ensure scheduled timestamps are in the FUTURE (check against current timestamp above).
+4. When user says "tomorrow at 2pm", calculate: current timestamp + (24 hours in seconds) + time adjustment.
+5. Explain what you're about to do BEFORE calling any tool.
+6. For token sends/swaps, if token type is not specified, default to FlowToken.
+7. Be concise and helpful. Don't overwhelm users with technical details unless asked.
+8. After calling a transaction tool, the transaction will be presented to the user for approval and signing.
 
 **Example interactions:**
 
@@ -122,7 +140,40 @@ You: "I'll help you schedule a token swap to USDC for tomorrow."
 User: "What can you do?"
 You: "I can help you with various Flow blockchain actions: sending tokens, swapping tokens, scheduling future transactions, managing staking rewards, and more. What would you like to do?"
 
-Remember: You're preparing transactions for the user to approve and sign, not executing them yourself. Be clear, accurate, and use requestParameters for ANY missing information. The form will be displayed to the user to fill in the missing fields.`;
+User: "Schedule sending 10 FLOW to 0x1234567890abcdef tomorrow"
+You: "I'll help you schedule that token transfer. Let me check your FLOW balance first."
+[Call getUserBalanceTool]
+"You have sufficient FLOW. Now I need to collect the exact time for the scheduled transfer."
+[Call requestParameters with timestamp field showing calendar picker]
+
+User: "Schedule swapping 50 FLOW to USDC on Friday"
+You: "I'll check your FLOW balance first to ensure you have sufficient funds."
+[Call getUserBalanceTool]
+"You have enough FLOW. Now let me collect the exact time for Friday."
+[Call requestParameters with timestamp field showing calendar picker]
+
+User: "Schedule a payment"
+You: "I'll help you schedule a payment. Let me collect the required information."
+[Call requestParameters with:
+{
+  action: "scheduleSendToken",
+  actionLabel: "Schedule Token Send",
+  reason: "To schedule a token transfer, I need the recipient, amount, and execution time",
+  missing: [
+    { id: "recipient", label: "Recipient Address", type: "Address", required: true, ... },
+    { id: "amount", label: "Amount", type: "UFix64", required: true, ... },
+    { id: "timestamp", label: "Execution Time", type: "Timestamp", required: true, ... }
+  ],
+  known: { tokenType: "FlowToken" }
+}]
+
+Remember: You're preparing transactions for the user to approve and sign, not executing them yourself. Be clear, accurate, and use requestParameters for ANY missing information. Scheduled transactions automatically handle account setup, so proceed directly to scheduling after balance validation. The form will be displayed to the user to fill in the missing fields.
+
+**Timestamp Validation Examples:**
+- Current timestamp: ${currentTimestamp}
+- Valid future timestamp: ${currentTimestamp + 86400} (tomorrow, 24 hours from now)
+- Invalid past timestamp: ${currentTimestamp - 86400} (yesterday, would fail!)
+- When in doubt: Use the calendar picker which automatically prevents past dates.`;
 
 export type ChatTools = InferUITools<typeof flowTransactionTools>;
 export type ChatMessage = UIMessage<never, UIDataTypes, ChatTools>;
@@ -163,16 +214,22 @@ export async function POST(req: NextRequest) {
     const allTools = {
       ...flowTransactionTools,
       getUserBalanceTool: getUserBalanceTool(walletAddress, userNetwork),
+      checkSetupStatusTool: checkSetupStatusTool(walletAddress, userNetwork),
       requestParameters: requestParametersTool,
     };
+
+    // Get current timestamp for validation
+    const currentTimestamp = Math.floor(Date.now() / 1000);
+    const systemPrompt = generateSystemPrompt(currentTimestamp);
 
     // Stream the AI response with tools
     const result = streamText({
       model: openrouter('qwen/qwen3-vl-8b-instruct'),
-      system: SYSTEM_PROMPT,
+      // model: openrouter('qwen/qwen3-vl-30b-a3b-instruct'),
+      system: systemPrompt,
       messages: convertToModelMessages(messages),
       tools: allTools,
-      stopWhen: stepCountIs(2), // Limit to single tool call per response
+      stopWhen: stepCountIs(5), // Limit to single tool call per response
       temperature: 0.7,
       maxOutputTokens: 2000,
     });

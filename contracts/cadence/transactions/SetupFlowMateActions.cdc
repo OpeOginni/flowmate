@@ -1,6 +1,6 @@
 import "FlowTransactionScheduler"
 import "FlowTransactionSchedulerUtils"
-import "FlowMateActionHandler"
+import "FlowMateScheduledActionsHandler"
 import "FlowToken"
 import "USDCFlow"
 import "FungibleToken"
@@ -18,7 +18,7 @@ transaction() {
             signer.capabilities.publish(managerCap, at: FlowTransactionSchedulerUtils.managerPublicPath)
         }
 
-        if !signer.storage.check<@FlowMateActionHandler.Handler>(from: FlowMateActionHandler.HandlerStoragePath) {
+        if !signer.storage.check<@FlowMateScheduledActionsHandler.Handler>(from: FlowMateScheduledActionsHandler.HandlerStoragePath) {
             
             let flowVaultCap = signer.capabilities.storage.issue<auth(FungibleToken.Withdraw) &{FungibleToken.Vault}>(
                 /storage/flowTokenVault
@@ -28,21 +28,21 @@ transaction() {
                 USDCFlow.VaultStoragePath
             )
 
-            let handler <- FlowMateActionHandler.createHandler(
+            let handler <- FlowMateScheduledActionsHandler.createHandler(
                 flowVaultCap: flowVaultCap,
                 usdcVaultCap: usdcVaultCap
             )
 
-            signer.storage.save(<-handler, to: FlowMateActionHandler.HandlerStoragePath)
+            signer.storage.save(<-handler, to: FlowMateScheduledActionsHandler.HandlerStoragePath)
 
             let executeHandlerCap = signer.capabilities.storage.issue<auth(FlowTransactionScheduler.Execute) &{FlowTransactionScheduler.TransactionHandler}>(
-                FlowMateActionHandler.HandlerStoragePath
+                FlowMateScheduledActionsHandler.HandlerStoragePath
             )
 
             let publicHandlerCap = signer.capabilities.storage.issue<&{FlowTransactionScheduler.TransactionHandler}>(
-                FlowMateActionHandler.HandlerStoragePath
+                FlowMateScheduledActionsHandler.HandlerStoragePath
             )
-            signer.capabilities.publish(publicHandlerCap, at: FlowMateActionHandler.HandlerPublicPath)
+            signer.capabilities.publish(publicHandlerCap, at: FlowMateScheduledActionsHandler.HandlerPublicPath)
         }
     }
 }
