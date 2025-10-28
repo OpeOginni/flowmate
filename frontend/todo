@@ -8,8 +8,10 @@
 [] - Test Scheduling System
     [] - Deploy Scheduler Contract
 
-[] - Staking Token System 
+[] - Staking Token System https://developers.flow.com/blockchain-development-tutorials/forte/flow-actions/basic-combinations#single-token-to-lp-zapper
     [] - Add Staked Flow Token to the Mix
 
 
 [] - Test Scheduling tool and Staking and Unstaking tool
+
+[] - Flash Arbitrage https://developers.flow.com/blockchain-development-tutorials/forte/flow-actions/basic-combinations#flash-loan-arbitrage

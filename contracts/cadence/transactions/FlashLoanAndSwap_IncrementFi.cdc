@@ -7,18 +7,14 @@ import "FungibleToken"
 import "DeFiActions"
 import "SwapInterfaces"
 import "SwapConnectors"
-import "EVM"
-import "UniswapV2SwapConnectors"
 
-transaction(flashLoanAmount: UFix64, incrementFiPairAddress: Address, uniswapV2RouterAddress: Address) {
+/// Flash loan arbitrage transaction using only IncrementFi protocol
+/// Route: FLOW -> USDC -> FLOW via IncrementFi swaps
+transaction(flashLoanAmount: UFix64, incrementFiPairAddress: Address) {
 
   let flasher: IncrementFiFlashloanConnectors.Flasher
-  let swapper1: IncrementFiSwapConnectors.Swapper
-  let swapper2: IncrementFiSwapConnectors.Swapper
-  let uniswapV2Swapper: UniswapV2SwapConnectors.Swapper
   let multiSwapper: SwapConnectors.MultiSwapper
   let flowVaultCap: &{FungibleToken.Vault}
-  let usdcVaultCap: &{FungibleToken.Vault}
   let flowKey: String
   let usdcFlowKey: String
   let initialFlowBalance: UFix64
@@ -29,19 +25,23 @@ transaction(flashLoanAmount: UFix64, incrementFiPairAddress: Address, uniswapV2R
     self.flowKey = SwapConfig.SliceTokenTypeIdentifierFromVaultType(vaultTypeIdentifier: Type<@FlowToken.Vault>().identifier)
     self.usdcFlowKey = SwapConfig.SliceTokenTypeIdentifierFromVaultType(vaultTypeIdentifier: Type<@USDCFlow.Vault>().identifier)
 
+    // Verify FlowToken vault exists
     if !acct.storage.check<@{FungibleToken.Vault}>(from: /storage/flowTokenVault) {
       panic("FlowToken vault not found")
     }
 
+    // Verify USDCFlow vault exists
     if !acct.storage.check<@{FungibleToken.Vault}>(from: USDCFlow.VaultStoragePath) {
       panic("USDCFlow vault not found")
     }
 
     self.flowVaultCap = acct.storage.borrow<&{FungibleToken.Vault}>(from: /storage/flowTokenVault)!
-    self.usdcVaultCap = acct.storage.borrow<&{FungibleToken.Vault}>(from: USDCFlow.VaultStoragePath)!
     self.initialFlowBalance = self.flowVaultCap.balance
+    
+    // Create or get executor capability
     self.executor = acct.capabilities.storage.issue<&{SwapInterfaces.FlashLoanExecutor}>(IncrementFiFlashloanConnectors.ExecutorStoragePath)
 
+    // Initialize flash loan connector
     self.flasher = IncrementFiFlashloanConnectors.Flasher(
       pairAddress: incrementFiPairAddress,
       type: Type<@FlowToken.Vault>(),
@@ -49,33 +49,27 @@ transaction(flashLoanAmount: UFix64, incrementFiPairAddress: Address, uniswapV2R
       uniqueID: nil
     )
 
-    self.swapper1 = IncrementFiSwapConnectors.Swapper(
+    // Create swapper for FLOW -> USDC
+    let swapper1 = IncrementFiSwapConnectors.Swapper(
       path: [self.flowKey, self.usdcFlowKey],
       inVault: Type<@FlowToken.Vault>(),
       outVault: Type<@USDCFlow.Vault>(),
       uniqueID: nil
     )
 
-    self.swapper2 = IncrementFiSwapConnectors.Swapper(
+    // Create swapper for USDC -> FLOW
+    let swapper2 = IncrementFiSwapConnectors.Swapper(
       path: [self.usdcFlowKey, self.flowKey],
       inVault: Type<@USDCFlow.Vault>(),
       outVault: Type<@FlowToken.Vault>(),
       uniqueID: nil
     )
 
-    self.uniswapV2Swapper = UniswapV2SwapConnectors.Swapper(
-      routerAddress: uniswapV2RouterAddress,
-      path: [EVM.EVMAddress(bytes: self.flowKey), EVM.EVMAddress(bytes: self.usdcFlowKey)],
-      inVault: Type<@FlowToken.Vault>(),
-      outVault: Type<@USDCFlow.Vault>(),
-      coaCapability: acct.capabilities.borrow<auth(EVM.Owner) &EVM.CadenceOwnedAccount>(/public/evm)!,
-      uniqueID: nil
-    )
-
+    // Combine swappers into multi-swapper for optimized routing
     self.multiSwapper = SwapConnectors.MultiSwapper(
       inVault: Type<@FlowToken.Vault>(),
       outVault: Type<@FlowToken.Vault>(),
-      swappers: [self.swapper1, self.swapper2],
+      swappers: [swapper1, swapper2],
       uniqueID: nil
     )
   }
@@ -118,3 +112,4 @@ transaction(flashLoanAmount: UFix64, incrementFiPairAddress: Address, uniswapV2R
     self.flowVaultCap.balance >= self.initialFlowBalance: "Flash loan arbitrage should not decrease balance"
   }
 }
+
