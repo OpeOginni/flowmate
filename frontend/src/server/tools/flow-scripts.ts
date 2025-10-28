@@ -1,7 +1,7 @@
 import { tool } from 'ai';
 import * as fs from 'fs';
 import * as path from 'path';
-import { GetUserBalanceParams, getUserBalanceSchema } from '../schemas/scripts';
+import { GetUserBalanceParams, getUserBalanceSchema, CheckSetupStatusParams, checkSetupStatusSchema } from '../schemas/scripts';
 import { templateTransactionWithLogging } from '../lib/template-transaction';
 import { FlowNetwork } from '../lib/contract-addresses';
 import * as fcl from '@onflow/fcl';
@@ -13,6 +13,7 @@ interface FlowConfig {
   flowNetwork: string
   stFlowToken: string
   USDCFlow: string
+  FlowMateScheduledActionsHandler: string
   FlowToken: string
   FungibleToken: string
   FungibleTokenMetadataViews: string
@@ -28,6 +29,7 @@ const flowConfig: Record<FlowNetwork, FlowConfig> = {
     USDCFlow: "",
     FlowToken: "",
     FungibleToken: "",
+    FlowMateScheduledActionsHandler: "",
     FungibleTokenMetadataViews: "",
   },
   testnet: {
@@ -40,6 +42,7 @@ const flowConfig: Record<FlowNetwork, FlowConfig> = {
     USDCFlow: "0x64adf39cbc354fcb",
     FlowToken: "0x7e60df042a9c0868",
     FungibleToken: "0x9a0766d93b6608b7",
+    FlowMateScheduledActionsHandler: "0x136a10c590912ef8",
     FungibleTokenMetadataViews: "0x9a0766d93b6608b7",
   },
   mainnet: {
@@ -52,6 +55,7 @@ const flowConfig: Record<FlowNetwork, FlowConfig> = {
     USDCFlow: "0xf1ab99c82dee3526",
     FlowToken: "0x1654653399040a61",
     FungibleToken: "0xf233dcee88fe0abe",
+    FlowMateScheduledActionsHandler: "0x136a10c590912ef8",
     FungibleTokenMetadataViews: "0xf233dcee88fe0abe",
   },
 }
@@ -107,6 +111,53 @@ export const getUserBalanceTool = (address: string, network: FlowNetwork) => too
   },
 });
 
+/**
+ * CheckSetupStatus Tool
+ */
+export const checkSetupStatusTool = (address: string, network: FlowNetwork) => tool({
+  description: 'Check if the user has completed the FlowMate setup. NOTE: This is optional - scheduled transactions automatically handle setup. Only use this if the user explicitly asks about their setup status.',
+  inputSchema: checkSetupStatusSchema,
+  execute: async (params: CheckSetupStatusParams) => {
+    const code = readAndTemplateScript('CheckSetupStatus.cdc', network);
+
+    const config = flowConfig[network];
+
+    fcl.config({
+      "accessNode.api": config.accessNodeUrl,
+      "flow.network": config.flowNetwork,
+      "fcl.limit": 1000
+    });
+
+    let result: any;
+
+    try {
+      result = await fcl.query({
+        cadence: code,
+        args: (arg, t) => [
+          arg(address, t.Address),
+        ]
+      })
+    } catch (error) {
+      console.error('Setup check error:', error);
+      throw new Error(`Failed to check setup status: ${error}`);
+    }
+
+    const isSetup = result.isSetup || false;
+    const hasManager = result.hasManager || false;
+    const hasHandler = result.hasHandler || false;
+
+    return {
+      isSetup,
+      hasManager,
+      hasHandler,
+      description: isSetup 
+        ? 'FlowMate setup is complete. You can schedule transactions.'
+        : 'FlowMate setup is not complete. Please run the setup transaction first by saying "Setup my account for scheduled transactions"',
+    };
+  },
+});
+
 export const flowScriptTools = {
   getUserBalanceTool: getUserBalanceTool,
+  checkSetupStatusTool: checkSetupStatusTool,
 };

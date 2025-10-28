@@ -9,10 +9,10 @@ export interface ContractAddresses {
   FlowToken: string;
   USDCFlow: string;
   stFlowToken: string;
+  FlowMateScheduledActionsHandler: string;
   FungibleToken: string;
   FlowTransactionScheduler: string;
   FlowTransactionSchedulerUtils: string;
-  FlowMateActionHandler: string;
   DeFiActions: string;
   SwapRouter: string;
   IncrementFiSwapConnectors: string;
@@ -34,11 +34,11 @@ export const CONTRACT_ADDRESSES: Record<FlowNetwork, ContractAddresses> = {
     FlowToken: '0x1654653399040a61',
     USDCFlow: '0xf1ab99c82dee3526',
     stFlowToken: '0xd6f80565193ad727',
+    FlowMateScheduledActionsHandler: '0x136a10c590912ef8',
     FungibleToken: '0xf233dcee88fe0abe',
     FungibleTokenMetadataViews: '0xf233dcee88fe0abe',
     FlowTransactionScheduler: '0xe467b9dd11fa00df',
     FlowTransactionSchedulerUtils: '0xe467b9dd11fa00df', // Same as FlowTransactionScheduler on mainnet
-    FlowMateActionHandler: '', // Your deployed contract address
     DeFiActions: '0x92195d814edf9cb0',
     SwapRouter: '0xa6850776a94e6551',
     IncrementFiSwapConnectors: '0xefa9bd7d1b17f1ed',
@@ -54,11 +54,11 @@ export const CONTRACT_ADDRESSES: Record<FlowNetwork, ContractAddresses> = {
     FlowToken: '0x7e60df042a9c0868',
     USDCFlow: '0x64adf39cbc354fcb',
     stFlowToken: '0xd6f80565193ad727',
+    FlowMateScheduledActionsHandler: '0x136a10c590912ef8',
     FungibleToken: '0x9a0766d93b6608b7',
     FungibleTokenMetadataViews: '0x9a0766d93b6608b7',
     FlowTransactionScheduler: '0x8c5303eaa26202d6',
     FlowTransactionSchedulerUtils: '0x8c5303eaa26202d6',
-    FlowMateActionHandler: '', // Your deployed contract address
     DeFiActions: '0x4c2ff9dd03ab442f',
     SwapRouter: '0x2f8af5ed05bbde0d',
     IncrementFiSwapConnectors: '0x49bae091e5ea16b5',
@@ -74,11 +74,11 @@ export const CONTRACT_ADDRESSES: Record<FlowNetwork, ContractAddresses> = {
     FlowToken: '0x0ae53cb6e3f42a79',
     USDCFlow: '0xf8d6e0586b0a20c7', // Placeholder
     stFlowToken: '0xd6f80565193ad727',
+    FlowMateScheduledActionsHandler: '0x136a10c590912ef8',
     FungibleToken: '0xee82856bf20e2aa6',
     FungibleTokenMetadataViews: '0xee82856bf20e2aa6',
     FlowTransactionScheduler: '0xf8d6e0586b0a20c7',
     FlowTransactionSchedulerUtils: '0xf8d6e0586b0a20c7',
-    FlowMateActionHandler: '0xf8d6e0586b0a20c7',
     DeFiActions: '0xf8d6e0586b0a20c7',
     SwapRouter: '0xf8d6e0586b0a20c7',
     IncrementFiSwapConnectors: '0xf8d6e0586b0a20c7',
