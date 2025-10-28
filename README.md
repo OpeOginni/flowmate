@@ -17,7 +17,7 @@ The system can be used both on **Mainnet** and **Testnet**, best to test Swappin
 
 ### Future Plans
 
-- [ ] Add more Tools with the relsease of Flow Forte Upgrade on mainnet
+- [ ] Add more Tools with the release of Flow Forte Upgrade on mainnet
     - [ ] Staking and Unstaking Flow
     - [ ] Engagging in Flash loan and swap operations (best for simple traders)
 - [ ] Add feature for model to create scheduled transactions
