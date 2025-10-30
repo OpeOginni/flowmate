@@ -2,6 +2,18 @@
 
 import * as React from "react"
 import { CalendarIcon } from "lucide-react"
+import { 
+  setHours, 
+  setMinutes, 
+  setSeconds, 
+  setMilliseconds,
+  addDays,
+  isFuture,
+  startOfDay,
+  format,
+  getHours,
+  getMinutes
+} from "date-fns"
 
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -30,35 +42,51 @@ export function DateTimePicker({
   const [open, setOpen] = React.useState(false)
   const [date, setDate] = React.useState<Date | undefined>(value)
   const [time, setTime] = React.useState<string>(
-    value ? `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}` : "12:00"
+    value ? `${String(getHours(value)).padStart(2, '0')}:${String(getMinutes(value)).padStart(2, '0')}` : "12:00"
   )
 
   React.useEffect(() => {
     if (value) {
       setDate(value)
-      setTime(`${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`)
+      setTime(`${String(getHours(value)).padStart(2, '0')}:${String(getMinutes(value)).padStart(2, '0')}`)
     }
   }, [value])
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (selectedDate) {
-      // Combine the selected date with the current time
+      // Combine the selected date with the current time using date-fns
       const [hours, minutes] = time.split(':').map(Number)
-      selectedDate.setHours(hours, minutes, 0, 0)
       
-      // Validate that the selected date/time is in the future
-      const now = new Date()
-      if (selectedDate <= now) {
+      // Use date-fns to set time components properly, avoiding timezone issues
+      let combinedDate = setMilliseconds(
+        setSeconds(
+          setMinutes(
+            setHours(selectedDate, hours),
+            minutes
+          ),
+          0
+        ),
+        0
+      )
+      
+      // Validate that the selected date/time is in the future using date-fns
+      if (!isFuture(combinedDate)) {
         // If in the past, adjust to tomorrow at the same time
-        const tomorrow = new Date(now)
-        tomorrow.setDate(tomorrow.getDate() + 1)
-        tomorrow.setHours(hours, minutes, 0, 0)
-        setDate(tomorrow)
-        onChange(tomorrow)
-      } else {
-        setDate(selectedDate)
-        onChange(selectedDate)
+        const tomorrow = addDays(new Date(), 1)
+        combinedDate = setMilliseconds(
+          setSeconds(
+            setMinutes(
+              setHours(tomorrow, hours),
+              minutes
+            ),
+            0
+          ),
+          0
+        )
       }
+      
+      setDate(combinedDate)
+      onChange(combinedDate)
       setOpen(false)
     }
   }
@@ -68,33 +96,36 @@ export function DateTimePicker({
     setTime(newTime)
     
     if (date) {
-      // Update the date with the new time
+      // Update the date with the new time using date-fns
       const [hours, minutes] = newTime.split(':').map(Number)
-      const updatedDate = new Date(date)
-      updatedDate.setHours(hours, minutes, 0, 0)
       
-      // Validate that the updated date/time is in the future
-      const now = new Date()
-      if (updatedDate <= now) {
+      // Use date-fns to set time components properly
+      let updatedDate = setMilliseconds(
+        setSeconds(
+          setMinutes(
+            setHours(date, hours),
+            minutes
+          ),
+          0
+        ),
+        0
+      )
+      
+      // Validate that the updated date/time is in the future using date-fns
+      if (!isFuture(updatedDate)) {
         // If changing time makes it past, bump to tomorrow
-        const tomorrow = new Date(updatedDate)
-        tomorrow.setDate(tomorrow.getDate() + 1)
-        setDate(tomorrow)
-        onChange(tomorrow)
-      } else {
-        setDate(updatedDate)
-        onChange(updatedDate)
+        updatedDate = addDays(updatedDate, 1)
       }
+      
+      setDate(updatedDate)
+      onChange(updatedDate)
     }
   }
 
   const formatDate = (date: Date | undefined) => {
     if (!date) return "Select date"
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    })
+    // Use date-fns format for consistent date formatting
+    return format(date, 'MMM d, yyyy')
   }
 
   return (
@@ -126,7 +157,7 @@ export function DateTimePicker({
               captionLayout="dropdown"
               fromYear={new Date().getFullYear()}
               toYear={new Date().getFullYear() + 10}
-              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+              disabled={(date) => date < startOfDay(new Date())}
             />
           </PopoverContent>
         </Popover>

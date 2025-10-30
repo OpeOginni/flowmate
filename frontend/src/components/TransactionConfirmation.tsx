@@ -6,6 +6,7 @@ import { TransactionButton, TransactionDialog } from '@onflow/react-sdk';
 import * as fcl from '@onflow/fcl';
 import { AlertCircle } from 'lucide-react';
 import { DateTimePicker } from './DateTimePicker';
+import { getUnixTime, fromUnixTime, format } from 'date-fns';
 
 interface TransactionArg {
   name: string;
@@ -39,9 +40,9 @@ export default function TransactionConfirmation({
   const handleArgChange = (index: number, newValue: string | Date) => {
     const updated = [...editedArgs];
     
-    // If newValue is a Date (from DateTimePicker), convert to Unix timestamp
+    // If newValue is a Date (from DateTimePicker), convert to Unix timestamp using date-fns
     if (newValue instanceof Date) {
-      updated[index] = { ...updated[index], value: Math.floor(newValue.getTime() / 1000) };
+      updated[index] = { ...updated[index], value: getUnixTime(newValue) };
     } else {
       updated[index] = { ...updated[index], value: newValue };
     }
@@ -118,7 +119,7 @@ export default function TransactionConfirmation({
                   // Detect timestamp fields - check both UFix64 type and name containing 'timestamp'
                   const isTimestamp = arg.type === 'UFix64' && arg.name.toLowerCase().includes('timestamp');
                   
-                  // For timestamps, parse the value correctly
+                  // For timestamps, parse the value correctly using date-fns
                   const timestampValue = isTimestamp && arg.value 
                     ? (typeof arg.value === 'number' 
                         ? arg.value 
@@ -126,7 +127,7 @@ export default function TransactionConfirmation({
                     : null;
                   
                   const timestampDate = timestampValue 
-                    ? new Date(timestampValue * 1000) 
+                    ? fromUnixTime(timestampValue)
                     : undefined;
                   
                   return (
@@ -151,10 +152,7 @@ export default function TransactionConfirmation({
                                 📅 Scheduled for:
                               </p>
                               <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300 mt-1">
-                                {timestampDate.toLocaleString('en-US', {
-                                  dateStyle: 'full',
-                                  timeStyle: 'short'
-                                })}
+                                {format(timestampDate, 'EEEE, MMMM d, yyyy \'at\' h:mm a')}
                               </p>
                             </div>
                           )}

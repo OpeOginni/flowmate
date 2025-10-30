@@ -1,6 +1,7 @@
 import { tool } from 'ai';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fromUnixTime, format } from 'date-fns';
 import {
   sendTokenSchema,
   scheduleSendTokenSchema,
@@ -101,11 +102,9 @@ export const scheduleSendTokenTool = tool({
   execute: async (params: ScheduleSendTokenParams) => {
     const code = readAndTemplateTransaction('ScheduleSendToken.cdc', currentNetwork);
     
-    const date = new Date(params.timestamp * 1000);
-    const formattedDate = date.toLocaleString('en-US', {
-      dateStyle: 'full',
-      timeStyle: 'short'
-    });
+    // Use date-fns for consistent date formatting
+    const date = fromUnixTime(params.timestamp);
+    const formattedDate = format(date, 'EEEE, MMMM d, yyyy \'at\' h:mm a');
     
     return {
       name: 'Schedule Token Send',
@@ -134,11 +133,9 @@ export const scheduleSwapTokenTool = tool({
   execute: async (params: ScheduleSwapTokenParams) => {
     const code = readAndTemplateTransaction('ScheduleSwapToken.cdc', currentNetwork);
     
-    const date = new Date(params.timestamp * 1000);
-    const formattedDate = date.toLocaleString('en-US', {
-      dateStyle: 'full',
-      timeStyle: 'short'
-    });
+    // Use date-fns for consistent date formatting
+    const date = fromUnixTime(params.timestamp);
+    const formattedDate = format(date, 'EEEE, MMMM d, yyyy \'at\' h:mm a');
     
     return {
       name: 'Schedule Token Swap',

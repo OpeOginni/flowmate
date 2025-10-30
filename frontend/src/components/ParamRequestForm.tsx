@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { AlertCircle, Send } from 'lucide-react';
 import { DateTimePicker } from './DateTimePicker';
+import { getUnixTime, fromUnixTime, format, isFuture } from 'date-fns';
 import type { ParamRequest, ParamField, FieldType } from '@/server/schemas/param-requests';
 
 interface ParamRequestFormProps {
@@ -59,14 +60,14 @@ export default function ParamRequestForm({
         processedValue = value === 'true';
         break;
       case 'Timestamp':
-        // For timestamp, convert Date to Unix timestamp (seconds)
+        // For timestamp, convert Date to Unix timestamp (seconds) using date-fns
         if (value instanceof Date) {
-          processedValue = Math.floor(value.getTime() / 1000);
+          processedValue = getUnixTime(value);
         } else if (typeof value === 'string' && value !== '') {
           // Try to parse as date string or timestamp
           const parsed = Date.parse(value);
           if (!isNaN(parsed)) {
-            processedValue = Math.floor(parsed / 1000);
+            processedValue = getUnixTime(new Date(parsed));
           } else {
             processedValue = value;
           }
@@ -95,11 +96,11 @@ export default function ParamRequestForm({
       return `${field.label} is required`;
     }
 
-    // Special validation for Timestamp fields - must be in the future
+    // Special validation for Timestamp fields - must be in the future using date-fns
     if (field.type === 'Timestamp' && typeof value === 'number') {
-      const currentTimestamp = Math.floor(Date.now() / 1000);
-      if (value <= currentTimestamp) {
-        const pastDate = new Date(value * 1000).toLocaleString();
+      const timestampDate = fromUnixTime(value);
+      if (!isFuture(timestampDate)) {
+        const pastDate = format(timestampDate, 'PPpp');
         return `${field.label} must be in the future. Selected time (${pastDate}) is in the past.`;
       }
     }
@@ -181,8 +182,8 @@ export default function ParamRequestForm({
 
     // Render timestamp fields with date/time picker
     if (field.type === 'Timestamp') {
-      // Convert timestamp (number) back to Date for the picker
-      const dateValue = typeof value === 'number' ? new Date(value * 1000) : undefined;
+      // Convert timestamp (number) back to Date for the picker using date-fns
+      const dateValue = typeof value === 'number' ? fromUnixTime(value) : undefined;
       
       return (
         <div key={field.id} className="space-y-2">
@@ -207,10 +208,7 @@ export default function ParamRequestForm({
                 📅 Scheduled for:
               </p>
               <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300 mt-1">
-                {dateValue.toLocaleString('en-US', {
-                  dateStyle: 'full',
-                  timeStyle: 'short'
-                })}
+                {format(dateValue, 'EEEE, MMMM d, yyyy \'at\' h:mm a')}
               </p>
             </div>
           )}
