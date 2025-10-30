@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { TransactionButton, TransactionDialog } from '@onflow/react-sdk';
 import * as fcl from '@onflow/fcl';
 import { AlertCircle } from 'lucide-react';
+import { DateTimePicker } from './DateTimePicker';
 
 interface TransactionArg {
   name: string;
@@ -35,9 +36,16 @@ export default function TransactionConfirmation({
   const [txId, setTxId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const handleArgChange = (index: number, newValue: string) => {
+  const handleArgChange = (index: number, newValue: string | Date) => {
     const updated = [...editedArgs];
-    updated[index] = { ...updated[index], value: newValue };
+    
+    // If newValue is a Date (from DateTimePicker), convert to Unix timestamp
+    if (newValue instanceof Date) {
+      updated[index] = { ...updated[index], value: Math.floor(newValue.getTime() / 1000) };
+    } else {
+      updated[index] = { ...updated[index], value: newValue };
+    }
+    
     setEditedArgs(updated);
   };
 
@@ -106,19 +114,62 @@ export default function TransactionConfirmation({
                 Transaction Parameters
               </h3>
               <div className="space-y-3">
-                {editedArgs.map((arg, index) => (
-                  <div key={index} className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {arg.name} <span className="text-gray-500">({arg.type})</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={String(arg.value)}
-                      onChange={(e) => handleArgChange(index, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                ))}
+                {editedArgs.map((arg, index) => {
+                  // Detect timestamp fields - check both UFix64 type and name containing 'timestamp'
+                  const isTimestamp = arg.type === 'UFix64' && arg.name.toLowerCase().includes('timestamp');
+                  
+                  // For timestamps, parse the value correctly
+                  const timestampValue = isTimestamp && arg.value 
+                    ? (typeof arg.value === 'number' 
+                        ? arg.value 
+                        : parseFloat(String(arg.value)))
+                    : null;
+                  
+                  const timestampDate = timestampValue 
+                    ? new Date(timestampValue * 1000) 
+                    : undefined;
+                  
+                  return (
+                    <div key={index} className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {arg.name} <span className="text-gray-500">({arg.type})</span>
+                      </label>
+                      
+                      {isTimestamp ? (
+                        <div className="space-y-2">
+                          <DateTimePicker
+                            value={timestampDate}
+                            onChange={(date) => {
+                              if (date) {
+                                handleArgChange(index, date);
+                              }
+                            }}
+                          />
+                          {timestampDate && (
+                            <div className="mt-2 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-700">
+                              <p className="text-xs font-medium text-indigo-900 dark:text-indigo-200">
+                                📅 Scheduled for:
+                              </p>
+                              <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300 mt-1">
+                                {timestampDate.toLocaleString('en-US', {
+                                  dateStyle: 'full',
+                                  timeStyle: 'short'
+                                })}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <input
+                          type="text"
+                          value={String(arg.value)}
+                          onChange={(e) => handleArgChange(index, e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
