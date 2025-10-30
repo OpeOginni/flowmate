@@ -1,7 +1,12 @@
 import { tool } from 'ai';
 import * as fs from 'fs';
 import * as path from 'path';
-import { GetUserBalanceParams, getUserBalanceSchema, CheckSetupStatusParams, checkSetupStatusSchema } from '../schemas/scripts';
+import { 
+  GetUserBalanceParams, 
+  getUserBalanceSchema, 
+  CheckSetupStatusParams, 
+  checkSetupStatusSchema, 
+} from '../schemas/scripts';
 import { templateTransactionWithLogging } from '../lib/template-transaction';
 import { FlowNetwork } from '../lib/contract-addresses';
 import * as fcl from '@onflow/fcl';

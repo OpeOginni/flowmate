@@ -102,6 +102,10 @@ export const scheduleSendTokenTool = tool({
     const code = readAndTemplateTransaction('ScheduleSendToken.cdc', currentNetwork);
     
     const date = new Date(params.timestamp * 1000);
+    const formattedDate = date.toLocaleString('en-US', {
+      dateStyle: 'full',
+      timeStyle: 'short'
+    });
     
     return {
       name: 'Schedule Token Send',
@@ -116,7 +120,7 @@ export const scheduleSendTokenTool = tool({
         { name: 'feeAmount', type: 'UFix64', value: toUFix64String(params.feeAmount) },
         { name: 'tokenType', type: 'String', value: params.tokenType },
       ],
-      description: `Schedule sending ${params.amount} ${params.tokenType} to ${params.recipient} on ${date.toLocaleString()}`,
+      description: `Schedule sending ${params.amount} ${params.tokenType} to ${params.recipient} on ${formattedDate}`,
     };
   },
 });
@@ -131,6 +135,10 @@ export const scheduleSwapTokenTool = tool({
     const code = readAndTemplateTransaction('ScheduleSwapToken.cdc', currentNetwork);
     
     const date = new Date(params.timestamp * 1000);
+    const formattedDate = date.toLocaleString('en-US', {
+      dateStyle: 'full',
+      timeStyle: 'short'
+    });
     
     return {
       name: 'Schedule Token Swap',
@@ -145,7 +153,7 @@ export const scheduleSwapTokenTool = tool({
         { name: 'executionEffort', type: 'UInt64', value: params.executionEffort.toString() },
         { name: 'feeAmount', type: 'UFix64', value: toUFix64String(params.feeAmount) },
       ],
-      description: `Schedule swapping ${params.amount} ${params.fromToken} to ${params.toToken} on ${date.toLocaleString()}`,
+      description: `Schedule swapping ${params.amount} ${params.fromToken} to ${params.toToken} on ${formattedDate}`,
     };
   },
 });
@@ -214,7 +222,7 @@ export const claimAndRestakeTool = tool({
 /**
  * SwapperAction Tool
  */
-export const swapperActionTool = tool({
+export const swapperTokensTool = tool({
   description: 'Execute an immediate token swap between FlowToken and USDCFlow tokens. Use this when the user wants to swap tokens now.',
   inputSchema: swapperActionSchema,
   execute: async (params: SwapperActionParams) => {
@@ -242,6 +250,6 @@ export const flowTransactionTools = {
   setupFlowMateActions: setupFlowMateActionsTool,
   cancelScheduledAction: cancelScheduledActionTool,
   claimAndRestake: claimAndRestakeTool,
-  swapTokens: swapperActionTool,
+  swapTokens: swapperTokensTool,
 };
 

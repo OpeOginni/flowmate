@@ -201,13 +201,18 @@ export default function ParamRequestForm({
             error={error}
           />
           {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
-          {dateValue && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Scheduled for: {dateValue.toLocaleString('en-US', {
-                dateStyle: 'full',
-                timeStyle: 'short'
-              })}
-            </p>
+          {dateValue && !error && (
+            <div className="mt-2 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-700">
+              <p className="text-xs font-medium text-indigo-900 dark:text-indigo-200">
+                📅 Scheduled for:
+              </p>
+              <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300 mt-1">
+                {dateValue.toLocaleString('en-US', {
+                  dateStyle: 'full',
+                  timeStyle: 'short'
+                })}
+              </p>
+            </div>
           )}
         </div>
       );
