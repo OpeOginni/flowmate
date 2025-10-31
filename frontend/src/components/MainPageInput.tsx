@@ -35,7 +35,12 @@ export default function MainPageInput() {
       {selectedTransaction && (
         <TransactionConfirmation
           transaction={selectedTransaction}
-          onClose={() => setSelectedTransaction(null)}
+          open={!!selectedTransaction}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedTransaction(null);
+            }
+          }}
           onSuccess={(txId) => {
             // Store the transaction ID with its key
             if (selectedTransaction._key) {

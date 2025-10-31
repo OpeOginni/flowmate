@@ -1,11 +1,14 @@
 import { tool } from 'ai';
 import * as fs from 'fs';
 import * as path from 'path';
+import { getUnixTime } from 'date-fns';
 import { 
   GetUserBalanceParams, 
   getUserBalanceSchema, 
   CheckSetupStatusParams, 
-  checkSetupStatusSchema, 
+  checkSetupStatusSchema,
+  GetCurrentTimestampParams,
+  getCurrentTimestampSchema,
 } from '../schemas/scripts';
 import { templateTransactionWithLogging } from '../lib/template-transaction';
 import { FlowNetwork } from '../lib/contract-addresses';
@@ -162,7 +165,25 @@ export const checkSetupStatusTool = (address: string, network: FlowNetwork) => t
   },
 });
 
+/**
+ * GetCurrentTimestamp Tool
+ */
+export const getCurrentTimestampTool = tool({
+  description: 'Get the current Unix timestamp in seconds. Use this FIRST when the user wants to schedule a transaction. After getting the current timestamp, calculate the future timestamp by adding seconds based on the user\'s instruction (e.g., "in 5 minutes" = +300 seconds, "in 1 hour" = +3600 seconds, "tomorrow" = +86400 seconds).',
+  inputSchema: getCurrentTimestampSchema,
+  execute: async (params: GetCurrentTimestampParams) => {
+    // Use date-fns for consistent timestamp handling
+    const currentTimestamp = getUnixTime(new Date());
+    
+    return {
+      timestamp: currentTimestamp,
+      description: `Current Unix timestamp: ${currentTimestamp} seconds`,
+    };
+  },
+});
+
 export const flowScriptTools = {
   getUserBalanceTool: getUserBalanceTool,
   checkSetupStatusTool: checkSetupStatusTool,
+  getCurrentTimestampTool: getCurrentTimestampTool,
 };

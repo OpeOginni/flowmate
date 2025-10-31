@@ -31,6 +31,7 @@ The system can be used both on **Mainnet** and **Testnet**, best to test Swappin
 - [x] Add feature for model to create scheduled transactions
     - [x] For Swapping Tokens
     - [x] For Sending Tokens
+- [x] Used Smarter Model that is still cheap enough but good with understanding tool calls
 - [ ] Add more defi systems than IncrementFi once other implement Flow Actions
 - [ ] Improve UI/UX
 
