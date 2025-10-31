@@ -3,7 +3,7 @@
 ![example use](https://github.com/OpeOginni/flowmate/blob/main/media/FlowMate_Demo.png)
 
 
-Flow Mate is a personal helper on Flow that helps you with multiple tasks on the blockchain from sending tokens to swapping tokens in seconds. You dont have to click buttons or interact with Defi UI's to get what you want done. 
+Flow Mate is a personal helper **built on the Flow Blockchain** that helps you with multiple tasks on the blockchain from sending tokens to swapping tokens in seconds. You dont have to click buttons or interact with Defi UI's to get what you want done. 
 
 ## Features
 
