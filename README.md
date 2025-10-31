@@ -44,4 +44,4 @@ The system can be used both on **Mainnet** and **Testnet**, best to test Swappin
 - Flow React SDK `@onflow/react-sdk`
 - Flow fcl `@onflow/fcl`
 
-**Built during the Forte Hacks by Flow Hackathon**
+**Built by [Opeyemi](https://x.com/BrightOginni) during the Forte Hacks by Flow Hackathon**
