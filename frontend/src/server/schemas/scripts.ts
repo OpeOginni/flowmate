@@ -14,5 +14,11 @@ export const getUserBalanceSchema = z.object({
  */
 export const checkSetupStatusSchema = z.object({});
 
+/**
+ * GetCurrentTimestamp - Get the current Unix timestamp in seconds (no parameters needed)
+ */
+export const getCurrentTimestampSchema = z.object({});
+
 export type GetUserBalanceParams = z.infer<typeof getUserBalanceSchema>;
 export type CheckSetupStatusParams = z.infer<typeof checkSetupStatusSchema>;
+export type GetCurrentTimestampParams = z.infer<typeof getCurrentTimestampSchema>;

@@ -1,7 +1,15 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from './ui/dialog';
 import { TransactionButton, TransactionDialog } from '@onflow/react-sdk';
 import * as fcl from '@onflow/fcl';
 import { AlertCircle } from 'lucide-react';
@@ -24,18 +32,25 @@ interface TransactionPayload {
 
 interface TransactionConfirmationProps {
   transaction: TransactionPayload;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSuccess?: (txId: string) => void;
 }
 
 export default function TransactionConfirmation({ 
   transaction, 
-  onClose,
+  open,
+  onOpenChange,
   onSuccess 
 }: TransactionConfirmationProps) {
   const [editedArgs, setEditedArgs] = useState<TransactionArg[]>(transaction.args || []);
   const [txId, setTxId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Reset edited args when transaction changes
+  useEffect(() => {
+    setEditedArgs(transaction.args || []);
+  }, [transaction.args]);
 
   const handleArgChange = (index: number, newValue: string | Date) => {
     const updated = [...editedArgs];
@@ -93,20 +108,36 @@ export default function TransactionConfirmation({
     return converted;
   };
 
+  const handleSuccess = (data: string) => {
+    setTxId(data);
+    setDialogOpen(true);
+    
+    // Call onSuccess callback if provided
+    if (onSuccess) {
+      onSuccess(data);
+    }
+  };
+
+  const handleError = (error: unknown) => {
+    console.error('=== Transaction Failed ===');
+    console.error("Transaction Name:", transaction.name);
+    console.error("Error:", error);
+    console.error("Error message:", error instanceof Error ? error.message : 'Unknown error');
+    console.error("Error stack:", error instanceof Error ? error.stack : 'No stack');
+    console.error("Transaction Code:", transaction.code?.substring(0, 300));
+    console.error("Args:", JSON.stringify(editedArgs, null, 2));
+    console.error('==========================');
+    alert(`Transaction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {transaction.name}
-              </h2>
-              <p className="text-gray-600 dark:text-gray-300 mt-1">
-                {transaction.description}
-              </p>
-            </div>
-          </div>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[95vw] sm:max-w-lg md:max-w-2xl lg:max-w-3xl max-h-[85vh] overflow-y-auto flex flex-col">
+        <DialogHeader>
+          <DialogTitle>{transaction.name}</DialogTitle>
+          <DialogDescription>{transaction.description}</DialogDescription>
+        </DialogHeader>
 
           {/* Transaction Arguments */}
           {editedArgs.length > 0 && (
@@ -194,7 +225,7 @@ export default function TransactionConfirmation({
           </details>
 
           {/* Action Buttons */}
-          <div className="flex flex-col gap-3">
+          <DialogFooter className="flex flex-col gap-3 items-stretch sm:flex-col">
             <TransactionButton
               label="🔐 Sign & Send Transaction"
               transaction={{
@@ -203,39 +234,21 @@ export default function TransactionConfirmation({
                 limit: 9999,
               }}
               mutation={{
-                onSuccess: (data) => {
-                  setTxId(data);
-                  setDialogOpen(true);
-                  
-                  // Call onSuccess callback if provided
-                  if (onSuccess) {
-                    onSuccess(data);
-                  }
-                },
-                onError: (error) => {
-                  console.error('=== Transaction Failed ===');
-                  console.error("Transaction Name:", transaction.name);
-                  console.error("Error:", error);
-                  console.error("Error message:", error instanceof Error ? error.message : 'Unknown error');
-                  console.error("Error stack:", error instanceof Error ? error.stack : 'No stack');
-                  console.error("Transaction Code:", transaction.code?.substring(0, 300));
-                  console.error("Args:", JSON.stringify(editedArgs, null, 2));
-                  console.error('==========================');
-                  alert(`Transaction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                }
+                onSuccess: handleSuccess,
+                onError: handleError,
               }}
               className="w-full h-12 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white"
             />
             <Button
-              onClick={onClose}
+              onClick={() => onOpenChange(false)}
               variant="outline"
-              className="w-full"
+              className="w-auto self-center bg-red-500 hover:bg-red-600 text-white hover:text-white"
             >
               Cancel
             </Button>
-          </div>
-        </div>
-      </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Transaction Status Dialog */}
       {txId && (
@@ -244,13 +257,13 @@ export default function TransactionConfirmation({
           onOpenChange={(open) => {
             setDialogOpen(open);
             if (!open) {
-              onClose(); // Close the confirmation modal when dialog closes
+              onOpenChange(false); // Close the confirmation modal when dialog closes
             }
           }} 
           txId={txId} 
         />
       )}
-    </div>
+    </>
   );
 }
 
