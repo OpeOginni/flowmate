@@ -230,15 +230,15 @@ export async function POST(req: NextRequest) {
 
     // Stream the AI response with tools
     const result = streamText({
-      model: openrouter('qwen/qwen3-vl-8b-instruct'),
-      // model: openrouter('qwen/qwen3-vl-30b-a3b-instruct'),
+      // model: openrouter('qwen/qwen3-vl-8b-instruct'),
+      model: openrouter('qwen/qwen3-next-80b-a3b-instruct'),
       // system: QWEN_SYSTEM_PROMPT,
       system: generateSystemPrompt(Math.floor(Date.now() / 1000)), // Convert milliseconds to seconds
       messages: convertToModelMessages(messages),
       tools: allTools,
       temperature: 0.7,
       maxOutputTokens: 2000,
-      stopWhen: stepCountIs(5), // Limit to 5 tool calls per response as that is the max we would ever need
+      stopWhen: stepCountIs(4), // Limit to 4 tool calls per response as that is the max we would ever need
       onStepFinish: async (step) => {
         console.log('[Chat API] Step finished:', {
           type: step.finishReason,
