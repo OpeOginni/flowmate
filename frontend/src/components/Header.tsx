@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useFlowCurrentUser, useFlowAccount, Connect } from "@onflow/react-sdk"
 import { useNetworkSwitch } from "@/providers/FlowProvider"
 import { useState } from "react"
@@ -84,7 +85,14 @@ export default function Header() {
         <>
             <header className="w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="container flex h-16 items-center justify-between px-4">
-                    <h1 className="text-xl font-bold text-primary">Flow Mate</h1>
+                    <Image 
+                        src="/header-logo.png" 
+                        alt="Flow Mate" 
+                        width={120} 
+                        height={40}
+                        className="h-8 w-auto"
+                        priority
+                    />
                     
                     {user?.loggedIn ? (
                         <div className="flex items-center gap-2">
