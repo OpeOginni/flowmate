@@ -240,7 +240,7 @@ NEXT_PUBLIC_FLOW_NETWORK=mainnet
 - [ ] Staking and unstaking Flow
 - [ ] Flash loan operations
 - [ ] Additional DeFi integrations
-- [ ] Enhanced UI/UX
+- [x] Enhanced UI/UX
 
 ## Contributing
 
