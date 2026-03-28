@@ -3,7 +3,7 @@
 > Your personal AI Butler for the Flow Blockchain
 
 [![Flow](https://img.shields.io/badge/Flow-Build%20on-Flow-orange)](https://flow.com)
-[![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-blue)](https://github.com/OpeOginni/flowmate/blob/main/LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org)
 [![AI SDK](https://img.shields.io/badge/Vercel%20AI%20SDK-4.0+-black)](https://sdk.vercel.ai)
 
